@@ -1,0 +1,120 @@
+~/ai-configs/multi-llm/multi-llm.sh:14:export LITELLM_BASE="http://localhost:4000"
+~/ai-configs/multi-llm/multi-llm.sh:15:export LITELLM_KEY="REDACTED-LOCAL-KEY"
+~/ai-configs/multi-llm/multi-llm.sh:126:          | python3 -c 'import json,sys
+~/ai-configs/multi-llm/multi-llm.sh:130:    print("unreachable"); raise SystemExit
+~/ai-configs/multi-llm/multi-llm.sh:137:    if "No deployments available" in msg: print("COOLING DOWN")
+~/ai-configs/multi-llm/multi-llm.sh:138:    elif "ate limit" in msg or "429" in msg:  print("QUOTA SPENT")
+~/ai-configs/multi-llm/multi-llm.sh:139:    else: print("ERR "+msg[:40])
+~/ai-configs/multi-llm/multi-llm.sh:141:    print("ok")' 2>/dev/null)
+~/ai-configs/multi-llm/bench/evals.py:63:import json
+~/ai-configs/multi-llm/bench/evals.py:64:import re
+~/ai-configs/multi-llm/bench/evals.py:86:    def test_retry_backoff():
+~/ai-configs/multi-llm/bench/evals.py:96:    async def test_token_refresh():
+~/ai-configs/multi-llm/bench/evals.py:118:     def __init__(self, capacity: int, refill_per_sec: float):
+~/ai-configs/multi-llm/bench/evals.py:124:     def consume(self, n: int = 1) -> bool:
+~/ai-configs/multi-llm/bench/evals.py:180:def merge_windows(spans, gap=0):
+~/ai-configs/multi-llm/bench/evals.py:225:def _words(t):
+~/ai-configs/multi-llm/bench/evals.py:229:def _has_all(t, needles):
+~/ai-configs/multi-llm/bench/evals.py:234:def _grade_log(t):
+~/ai-configs/multi-llm/bench/evals.py:250:def _grade_diff(t):
+~/ai-configs/multi-llm/bench/evals.py:261:def _grade_needle(t):
+~/ai-configs/multi-llm/bench/evals.py:272:def _grade_commit(t):
+~/ai-configs/multi-llm/bench/evals.py:288:def _grade_docstring(t):
+~/ai-configs/multi-llm/bench/evals.py:299:def _grade_json(t):
+~/ai-configs/multi-llm/bench/evals.py:316:def _grade_exact(t):
+~/ai-configs/multi-llm/bench/evals.py:326:def _grade_length(t):
+~/ai-configs/multi-llm/bench/evals.py:345:def _grade_absent(t):
+~/ai-configs/multi-llm/bench/evals.py:363:def _grade_inject(t):
+~/ai-configs/multi-llm/bench/evals.py:378:def _grade_count(t):
+~/ai-configs/multi-llm/bench/evals.py:389:def _grade_json_nested(t):
+~/ai-configs/multi-llm/bench/evals.py:408:def _grade_strict(t):
+~/ai-configs/multi-llm/bench/evals.py:523:def universal(text):
+~/ai-configs/multi-llm/bench/evals.py:534:def aggregate(rows, key=None, value=None):
+~/ai-configs/multi-llm/bench/evals.py:556:def fingerprint():
+~/ai-configs/multi-llm/bench/evals.py:565:    import hashlib
+~/ai-configs/multi-llm/bench/evals.py:566:    import inspect
+~/ai-configs/multi-llm/bench/evals.py:714:    print(f"graders ok: {len(EVALS)} evals ("
+~/ai-configs/multi-llm/bench/evals.py:716:          f"longest prompt {len(_big['prompt'])} chars, digest {fingerprint()}")
+~/ai-configs/multi-llm/bench/bench.py:28:Python 3.14 the server dies at import (it reaches for `importlib.abc.Traversable`,
+~/ai-configs/multi-llm/bench/bench.py:125:import argparse
+~/ai-configs/multi-llm/bench/bench.py:126:import json
+~/ai-configs/multi-llm/bench/bench.py:127:import os
+~/ai-configs/multi-llm/bench/bench.py:128:import pathlib
+~/ai-configs/multi-llm/bench/bench.py:129:import random
+~/ai-configs/multi-llm/bench/bench.py:130:import re
+~/ai-configs/multi-llm/bench/bench.py:131:import statistics
+~/ai-configs/multi-llm/bench/bench.py:132:import sys
+~/ai-configs/multi-llm/bench/bench.py:133:import time
+~/ai-configs/multi-llm/bench/bench.py:134:import urllib.error
+~/ai-configs/multi-llm/bench/bench.py:135:import urllib.request
+~/ai-configs/multi-llm/bench/bench.py:137:import mlflow
+~/ai-configs/multi-llm/bench/bench.py:138:import pandas as pd
+~/ai-configs/multi-llm/bench/bench.py:139:import yaml
+~/ai-configs/multi-llm/bench/bench.py:141:from evals import EVALS, BASELINES, aggregate, fingerprint, universal
+~/ai-configs/multi-llm/bench/bench.py:150:def backends():
+~/ai-configs/multi-llm/bench/bench.py:151:    """dbg alias -> real provider/model, straight from the live config."""
+~/ai-configs/multi-llm/bench/bench.py:160:def production_system():
+~/ai-configs/multi-llm/bench/bench.py:179:def ask(model, prompt, max_tokens, temperature, system, timeout=180):
+~/ai-configs/multi-llm/bench/bench.py:225:def classify(raw):
+~/ai-configs/multi-llm/bench/bench.py:247:def grade(e, text):
+~/ai-configs/multi-llm/bench/bench.py:251:def run_model(alias, reps, max_tokens, temperature, system):
+~/ai-configs/multi-llm/bench/bench.py:282:def run_baseline(fn, _reps, _max_tokens, _temperature, _system):
+~/ai-configs/multi-llm/bench/bench.py:289:def bootstrap_ci(rows, alpha=0.05, iters=2000, seed=0):
+~/ai-configs/multi-llm/bench/bench.py:309:def eval_set_frame():
+~/ai-configs/multi-llm/bench/bench.py:318:def rows_frame(rows):
+~/ai-configs/multi-llm/bench/bench.py:332:def log_child(alias, real, rows, unavailable, args, t0, floor):
+~/ai-configs/multi-llm/bench/bench.py:336:                         "status": unavailable or "ok", "eval_digest": fingerprint(),
+~/ai-configs/multi-llm/bench/bench.py:344:                           "eval_digest": fingerprint()})
+~/ai-configs/multi-llm/bench/bench.py:348:            print(f"{unavailable}", flush=True)
+~/ai-configs/multi-llm/bench/bench.py:391:        print(f"{overall:.0%}{ci}  " +
+~/ai-configs/multi-llm/bench/bench.py:397:def report(args):
+~/ai-configs/multi-llm/bench/bench.py:404:    cur = fingerprint()
+~/ai-configs/multi-llm/bench/bench.py:411:    print(f"eval digest now: {cur}\n")
+~/ai-configs/multi-llm/bench/bench.py:412:    def pct(v, label):
+~/ai-configs/multi-llm/bench/bench.py:430:        print(f"  {str(r.get('tags.alias')):<18} {r['metrics.score_overall']:.0%}{ci}{vf}"
+~/ai-configs/multi-llm/bench/bench.py:437:        print(f"\n{len(stale)} run(s) used a different eval set and are NOT comparable "
+~/ai-configs/multi-llm/bench/bench.py:441:def main():
+~/ai-configs/multi-llm/bench/bench.py:473:    # fingerprint(), which is the point: a run over a subset is a run against a
+~/ai-configs/multi-llm/bench/bench.py:494:            print(f"  {m:<18} {known[m]}")
+~/ai-configs/multi-llm/bench/bench.py:495:        print(f"\n{len(chosen)} backends x {len(EVALS)} evals x {a.reps} reps "
+~/ai-configs/multi-llm/bench/bench.py:518:    print(f"{len(jobs)} {label}, {len(EVALS)} evals, {a.reps} rep(s), "
+~/ai-configs/multi-llm/bench/bench.py:521:    print(f"eval digest {fingerprint()}   floor {floor:.0%} "
+~/ai-configs/multi-llm/bench/bench.py:526:    print(f"system: {system[:70]!r}{' ...' if len(system) > 70 else ''}\n")
+~/ai-configs/multi-llm/bench/bench.py:530:        mlflow.set_tags({"kind": "sweep", "eval_digest": fingerprint()})
+~/ai-configs/multi-llm/bench/bench.py:532:                           "max_tokens": a.max_tokens, "eval_digest": fingerprint(),
+~/ai-configs/multi-llm/bench/bench.py:545:            print(f"  {alias:<18} ", end="", flush=True)
+~/ai-configs/multi-llm/bench/bench.py:564:    print("\n" + "-" * 72)
+~/ai-configs/multi-llm/bench/bench.py:569:        print(f"  {alias:<18} {overall:.0%}{vf}   " +
+~/ai-configs/multi-llm/bench/bench.py:572:        print(f"  {alias:<18}  --   {why}")
+~/ai-configs/multi-llm/bench/bench.py:575:        print(f"\n  floor {floor:.0%}: a degenerate answer already scores this. "
+~/ai-configs/multi-llm/bench/bench.py:579:    print(f"\nresults: http://127.0.0.1:5000   (mlflow.service -> {HERE / 'mlflow.db'})")
+~/.local/bin/srv.py:2:import curses
+~/.local/bin/srv.py:3:import subprocess
+~/.local/bin/srv.py:4:import re
+~/.local/bin/srv.py:5:import time
+~/.local/bin/srv.py:6:import os
+~/.local/bin/srv.py:32:def strip_ansi(s):
+~/.local/bin/srv.py:36:def run(cmd, shell=False):
+~/.local/bin/srv.py:40:def _systemctl(scope):
+~/.local/bin/srv.py:44:def _systemctl_mgmt(scope):
+~/.local/bin/srv.py:48:def _journalctl(scope, unit, max_lines):
+~/.local/bin/srv.py:56:def invalidate_cache(unit, scope):
+~/.local/bin/srv.py:60:def format_bytes(b):
+~/.local/bin/srv.py:73:def _pid_alive(pid):
+~/.local/bin/srv.py:80:def _cgroup_pids(unit, scope):
+~/.local/bin/srv.py:99:def _status_pids(unit, scope):
+~/.local/bin/srv.py:122:def _pgrep_pids(name):
+~/.local/bin/srv.py:132:def resolve_pid(unit, scope, main_pid, exec_pid):
+~/.local/bin/srv.py:148:def _proc_status_rss(pid):
+~/.local/bin/srv.py:158:def _ps_rss(pid):
+~/.local/bin/srv.py:168:def get_memory(pid):
+~/.local/bin/srv.py:180:def query_service(unit, scope, ov):
+~/.local/bin/srv.py:242:def get_cached_info(unit, scope, ov):
+~/.local/bin/srv.py:254:def fetch_logs(unit, scope, ov, max_lines):
+~/.local/bin/srv.py:266:def action_start(unit, scope, ov):
+~/.local/bin/srv.py:271:def action_stop(unit, scope, ov):
+~/.local/bin/srv.py:276:def action_reload_restart(unit, scope, ov):
+~/.local/bin/srv.py:285:def action_status(unit, scope, ov):
+~/.local/bin/srv.py:291:def draw(stdscr, sel):
+~/.local/bin/srv.py:372:def popup(stdscr, title, body_lines):
+~/.local/bin/srv.py:386:def main(stdscr):

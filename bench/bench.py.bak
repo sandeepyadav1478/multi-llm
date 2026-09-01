@@ -1,0 +1,239 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["mlflow>=2.16", "pyyaml"]
+# ///
+"""Benchmark every non-Anthropic backend on the work we actually want to give it.
+
+    uv run bench.py                    # every backend that is up right now
+    uv run bench.py --models dbg-groq,dbg-local
+    uv run bench.py --reps 3           # variance; costs 3x the quota
+    uv run bench.py --list             # what would run, no requests
+    mlflow ui --backend-store-uri sqlite:///$PWD/mlflow.db
+
+Backends come from the `dbg-*` aliases in the LiteLLM config, not from a list in
+this file. Those aliases have fallbacks explicitly disabled, so a score is
+attributable to the backend named. Benchmarking the group aliases (`fast`,
+`smart`, ...) would silently score whichever deployment answered.
+
+Quota is the binding constraint, not time. One full pass is 8 requests per
+backend, and all three OpenRouter models share ONE bucket of 50 requests/day —
+so a single --reps 3 run over the OpenRouter models would spend 72 and fail
+partway. Spent backends are recorded as skipped, never as scoring zero, so
+rerunning after the midnight-UTC reset fills in the gaps rather than repeating
+work.
+"""
+
+import argparse
+import json
+import os
+import pathlib
+import statistics
+import sys
+import time
+import urllib.error
+import urllib.request
+
+import mlflow
+import yaml
+
+from evals import EVALS, universal
+
+HERE = pathlib.Path(__file__).parent
+CONFIG = pathlib.Path.home() / "ai-configs/litellm/config.yaml"
+BASE = os.environ.get("LITELLM_BASE", "http://localhost:4000")
+KEY = os.environ.get("LITELLM_KEY", "sk-litellm-local")
+
+
+def backends():
+    """dbg alias -> real provider/model, straight from the live config."""
+    cfg = yaml.safe_load(CONFIG.read_text())
+    return {
+        m["model_name"]: m["litellm_params"]["model"]
+        for m in cfg["model_list"]
+        if m["model_name"].startswith("dbg-")
+    }
+
+
+def ask(model, prompt, max_tokens, timeout=180):
+    """-> (text, latency, usage) or raises Unavailable for a quota/cooldown miss."""
+    body = json.dumps({
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+        # Reasoning models spend this budget on thinking BEFORE writing a word,
+        # and a model cut off mid-thought returns empty content that grades as a
+        # total failure. Measured: groq qwen3.6-27b scored 50% at 1024 purely
+        # because 6 of 8 answers hit out=1024 exactly with text=''. That is a
+        # budget artefact, not a quality result — hence the flag. Compare runs
+        # only at equal max_tokens; it is logged as a param for that reason.
+        "max_tokens": max_tokens,
+        "temperature": 0,
+    }).encode()
+    req = urllib.request.Request(
+        f"{BASE}/v1/chat/completions", data=body,
+        headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json"},
+    )
+    t0 = time.monotonic()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            d = json.load(r)
+    except urllib.error.HTTPError as e:
+        raise Unavailable(classify(e.read().decode("utf-8", "replace"))) from None
+    except Exception as e:
+        raise Unavailable(f"{type(e).__name__}: {e}") from None
+    dt = time.monotonic() - t0
+    msg = d["choices"][0]["message"]
+    # Only `content`, deliberately, even though some backends put the answer in
+    # `reasoning_content` and leave content empty. Anything consuming these
+    # models in a pipeline reads content; a model that leaves it empty is
+    # unusable there regardless of what it was thinking. Scoring that as
+    # non_empty=False is the correct answer, not a measurement gap.
+    text = msg.get("content") or ""
+    return text, dt, d.get("usage", {})
+
+
+class Unavailable(Exception):
+    pass
+
+
+def classify(raw):
+    low = raw.lower()
+    if "no deployments available" in low:
+        return "COOLING DOWN"
+    if "rate limit" in low or "429" in low or "quota" in low:
+        return "QUOTA SPENT"
+    if "context" in low and ("window" in low or "length" in low):
+        return "CONTEXT TOO SMALL"
+    return "ERR " + raw[:120].replace("\n", " ")
+
+
+# Groq's free tier is capped per MINUTE, OpenRouter's per DAY, and both surface
+# as an identical 429. Backing off separates them: a TPM window heals in ~60s, a
+# daily cap does not. This is not optional politeness — Groq's measured limit is
+# TPM 8,000 and it bills input + max_tokens together, so one eval costs ~1,460
+# and a full 8-eval pass CANNOT fit in one minute. Without a budget here, Groq
+# scores as "spent" every single run and we would conclude, wrongly, that it is
+# unusable for offload work.
+BACKOFF_S = 35
+BACKOFF_BUDGET = 8
+
+
+def run_model(alias, real, reps, max_tokens):
+    rows, budget = [], BACKOFF_BUDGET
+    for e in EVALS:
+        for rep in range(reps):
+            text, dt, usage, note = None, 0.0, {}, ""
+            while text is None:
+                try:
+                    text, dt, usage = ask(alias, e["prompt"], max_tokens)
+                except Unavailable as u:
+                    s = str(u)
+                    if "QUOTA" in s and budget > 0:
+                        budget -= 1
+                        note = "after backoff"
+                        time.sleep(BACKOFF_S)
+                        continue
+                    # Context overflow is about this prompt, not the backend, so
+                    # score it zero and keep going.
+                    if "CONTEXT" in s:
+                        text, note = "", s
+                        break
+                    # Anything else is down for every eval. Stop rather than
+                    # burning seven more timeouts to learn the same thing.
+                    return rows, s
+            rows.append(dict(
+                eval=e["id"], category=e["category"], rep=rep, text=text,
+                latency=round(dt, 2), usage=usage, note=note,
+                scores={**e["grade"](text), **universal(text)},
+            ))
+    return rows, None
+
+
+def score(rows, category=None):
+    picked = [r for r in rows if category is None or r["category"] == category]
+    crits = [v for r in picked for v in r["scores"].values()]
+    return sum(crits) / len(crits) if crits else 0.0
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--models", help="comma-separated dbg-* aliases; default all")
+    p.add_argument("--reps", type=int, default=1)
+    # 4096 because that is what bin/llm sends. Benchmarking at a budget the
+    # production caller does not use measures nothing: at 1024, qwen3.6-27b
+    # scored 50% purely by being cut off mid-thought, which would have been read
+    # as "bad model" when the real answer is "fine model, expensive on a TPM tier".
+    p.add_argument("--max-tokens", type=int, default=4096,
+                   help="output budget; must match bin/llm (4096) to be meaningful")
+    p.add_argument("--list", action="store_true")
+    p.add_argument("--experiment", default="multi-llm-offload")
+    a = p.parse_args()
+
+    known = backends()
+    chosen = a.models.split(",") if a.models else list(known)
+    unknown = [m for m in chosen if m not in known]
+    if unknown:
+        sys.exit(f"unknown alias(es): {unknown}\nknown: {list(known)}")
+
+    if a.list:
+        for m in chosen:
+            print(f"  {m:<18} {known[m]}")
+        print(f"\n{len(chosen)} backends x {len(EVALS)} evals x {a.reps} reps "
+              f"= {len(chosen) * len(EVALS) * a.reps} requests")
+        return
+
+    # sqlite, not the file store: MLflow 3 refuses `file:./mlruns` outright
+    # ("in maintenance mode"). Artifacts still land on disk beside the db.
+    mlflow.set_tracking_uri(f"sqlite:///{HERE / 'mlflow.db'}")
+    mlflow.set_experiment(a.experiment)
+
+    print(f"{len(chosen)} backends, {len(EVALS)} evals, {a.reps} rep(s)\n")
+    summary = []
+    for alias in chosen:
+        real = known[alias]
+        print(f"  {alias:<18} ", end="", flush=True)
+        t0 = time.monotonic()
+        rows, unavailable = run_model(alias, real, a.reps, a.max_tokens)
+
+        with mlflow.start_run(run_name=alias):
+            mlflow.set_tags({"alias": alias, "backend": real,
+                             "provider": real.split("/")[0],
+                             "status": unavailable or "ok"})
+            mlflow.log_params({"alias": alias, "backend": real, "reps": a.reps,
+                               "n_evals": len(EVALS), "max_tokens": a.max_tokens})
+            if unavailable:
+                # No metrics on purpose. Logging 0.0 for a backend that never
+                # answered would sink its average in every later comparison.
+                print(f"{unavailable}", flush=True)
+                summary.append((alias, None, unavailable))
+                continue
+
+            overall = score(rows)
+            cats = {c: score(rows, c) for c in {e["category"] for e in EVALS}}
+            lat = [r["latency"] for r in rows if r["latency"] > 0]
+            mlflow.log_metrics({
+                "score_overall": overall,
+                **{f"score_{c}": v for c, v in cats.items()},
+                **{f"eval_{r['eval']}": score([r]) for r in rows if r["rep"] == 0},
+                "latency_median": round(statistics.median(lat), 2) if lat else 0.0,
+                "latency_max": round(max(lat), 2) if lat else 0.0,
+                "wall_seconds": round(time.monotonic() - t0, 1),
+            })
+            mlflow.log_dict({"rows": rows}, "responses.json")
+            med = f"  med {statistics.median(lat):.1f}s" if lat else ""
+            print(f"{overall:.0%}  "
+                  + "  ".join(f"{c}={v:.0%}" for c, v in sorted(cats.items())) + med, flush=True)
+            summary.append((alias, overall, cats))
+
+    print("\n" + "-" * 64)
+    ranked = sorted([s for s in summary if s[1] is not None], key=lambda s: -s[1])
+    for alias, overall, cats in ranked:
+        print(f"  {alias:<18} {overall:.0%}   " +
+              "  ".join(f"{c} {v:.0%}" for c, v in sorted(cats.items())))
+    for alias, overall, why in [s for s in summary if s[1] is None]:
+        print(f"  {alias:<18}  --   {why}")
+    print(f"\nmlflow ui --backend-store-uri sqlite:///{HERE / 'mlflow.db'}")
+
+
+if __name__ == "__main__":
+    main()

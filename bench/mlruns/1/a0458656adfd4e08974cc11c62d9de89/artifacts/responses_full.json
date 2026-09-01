@@ -1,0 +1,89 @@
+{
+  "rows": [
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 7.5,
+      "usage": {
+        "completion_tokens": 132,
+        "prompt_tokens": 444,
+        "total_tokens": 576
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "Handle NTP clock steps in TokenBucket.consume\n\nClocks may step backwards during NTP synchronization. Without protection, a negative elapsed time causes `self.tokens` to decrease below its previous value, eventually draining the bucket entirely and locking all callers out. This patch clamps `elapsed` to zero and explicitly caps `tokens` at `capacity` after refill.",
+      "latency": 9.94,
+      "usage": {
+        "completion_tokens": 541,
+        "prompt_tokens": 377,
+        "total_tokens": 918
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.9,
+      "usage": {
+        "completion_tokens": 45,
+        "prompt_tokens": 65,
+        "total_tokens": 110
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json_nested",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "{\"total\": 47, \"failed\": [{\"name\": \"test_retry_backoff\", \"reason\": \"AssertionError: assert [2.0, 4.0, 6.0] == [2.0, 4.0, 8.0]\"}, {\"name\": \"test_token_refresh\", \"reason\": \"httpx.ConnectTimeout: timed out\"}]}",
+      "latency": 9.79,
+      "usage": {
+        "completion_tokens": 576,
+        "prompt_tokens": 588,
+        "total_tokens": 1164
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "count_right": true,
+        "names_right": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

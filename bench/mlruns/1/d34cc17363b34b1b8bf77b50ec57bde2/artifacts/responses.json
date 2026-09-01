@@ -1,0 +1,200 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "**Test Run Summary**\n\nThe test run collected 47 items and ran for 12.43 seconds. 2 tests failed:\n\n1. **test_retry_backoff** in **tests/test_client.py**: This test failed due to an assertion error. The expected delays were [2.0, 4.0, 8.0], but the actual delays were [2.0, 4.0, 6.0]. This suggests a bug in the _compute_delays method of the Client class.\n2. **test_token_refresh** in **tests/test_session.py**: This test failed due to a httpx.ConnectTimeout error. The test was trying to refresh a token, but the request timed out. This could be due to a network issue or a problem with the refresh_url or payload.",
+      "latency": 0.64,
+      "usage": {
+        "completion_tokens": 165,
+        "prompt_tokens": 512,
+        "total_tokens": 677,
+        "queue_time": 0.174678626,
+        "prompt_time": 0.036889241,
+        "completion_time": 0.373059196,
+        "total_time": 0.409948437
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": true,
+        "names_fail_2": true,
+        "gives_count": true,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "This diff changes the `consume` method of the `TokenBucket` class in `ratelimit.py`. It adds a check to prevent the bucket from draining when the system clock steps backwards, and also removes the explicit `min` call to cap the token count at `capacity`. This ensures the bucket's token count remains within its capacity.",
+      "latency": 0.25,
+      "usage": {
+        "completion_tokens": 70,
+        "prompt_tokens": 336,
+        "total_tokens": 406,
+        "queue_time": 0.048685422,
+        "prompt_time": 0.023248357,
+        "completion_time": 0.12843579,
+        "total_time": 0.151684147
+      },
+      "note": "",
+      "scores": {
+        "names_symbol": true,
+        "clock_guard": true,
+        "cap_change": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 0.18,
+      "usage": {
+        "completion_tokens": 6,
+        "prompt_tokens": 431,
+        "total_tokens": 437,
+        "queue_time": 0.056595942,
+        "prompt_time": 0.029841187,
+        "completion_time": 0.008911611,
+        "total_time": 0.038752798
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "`fix token bucket refill calculation`\n\nThis commit fixes a potential issue with the token bucket refill calculation, where clocks stepping backwards under NTP correction could silently drain the bucket and lock every caller out. The code now checks for negative elapsed time and clamps the tokens to the capacity if they exceed it.",
+      "latency": 0.22,
+      "usage": {
+        "completion_tokens": 61,
+        "prompt_tokens": 344,
+        "total_tokens": 405,
+        "queue_time": 0.052341526,
+        "prompt_time": 0.025241463,
+        "completion_time": 0.101685434,
+        "total_time": 0.126926897
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "Merges a list of overlapping intervals (windows) into a list of non-overlapping intervals.\n\nParameters:\n    spans (list of tuples): A list of intervals, where each interval is a tuple of two integers representing the start and end of the interval.\n    gap (int, optional): The maximum allowed gap between merged intervals. Defaults to 0.\n\nReturns:\n    list of tuples: A list of non-overlapping intervals.",
+      "latency": 0.31,
+      "usage": {
+        "completion_tokens": 88,
+        "prompt_tokens": 133,
+        "total_tokens": 221,
+        "queue_time": 0.086420794,
+        "prompt_time": 0.011142955,
+        "completion_time": 0.15799644,
+        "total_time": 0.169139395
+      },
+      "note": "after backoff",
+      "scores": {
+        "describes_merge": true,
+        "documents_gap": true,
+        "documents_return": true,
+        "no_invention": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "{\n  \"service\": \"litellm-proxy.service\",\n  \"state\": \"failed\",\n  \"total\": 25\n}",
+      "latency": 0.17,
+      "usage": {
+        "completion_tokens": 28,
+        "prompt_tokens": 463,
+        "total_tokens": 491,
+        "queue_time": 0.049797644,
+        "prompt_time": 0.047325925,
+        "completion_time": 0.035870924,
+        "total_time": 0.083196849
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "values": false,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.22,
+      "usage": {
+        "completion_tokens": 4,
+        "prompt_tokens": 54,
+        "total_tokens": 58,
+        "queue_time": 0.160044659,
+        "prompt_time": 0.004508039,
+        "completion_time": 0.005215283,
+        "total_time": 0.009723322
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "A token bucket rate limiter allocates a fixed number of tokens per unit time, allowing a certain rate of requests, and only permits requests when tokens are available, preventing excessive usage.",
+      "latency": 0.32,
+      "usage": {
+        "completion_tokens": 38,
+        "prompt_tokens": 52,
+        "total_tokens": 90,
+        "queue_time": 0.159480819,
+        "prompt_time": 0.002486839,
+        "completion_time": 0.062359853,
+        "total_time": 0.064846692
+      },
+      "note": "",
+      "scores": {
+        "under_30": false,
+        "not_stub": true,
+        "on_topic": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

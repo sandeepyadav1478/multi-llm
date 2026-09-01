@@ -1,0 +1,89 @@
+{
+  "rows": [
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 7.97,
+      "usage": {
+        "completion_tokens": 172,
+        "prompt_tokens": 444,
+        "total_tokens": 616
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "Prevent token drain from backward clock steps\n\nNegative elapsed time caused by NTP corrections could reduce\ntokens below their current value, eventually draining the bucket\nand locking all callers out. Cap elapsed at zero to avoid this.\n\nAlso remove the redundant `min(tokens, capacity)` call since\nthe new logic already clamps tokens above capacity.",
+      "latency": 6.51,
+      "usage": {
+        "completion_tokens": 393,
+        "prompt_tokens": 377,
+        "total_tokens": 770
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 1.21,
+      "usage": {
+        "completion_tokens": 45,
+        "prompt_tokens": 65,
+        "total_tokens": 110
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json_nested",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "{\"total\": 47, \"failed\": [{\"name\": \"test_retry_backoff\", \"reason\": \"AssertionError: assert [2.0, 4.0, 6.0] == [2.0, 4.0, 8.0]\"}, {\"name\": \"test_token_refresh\", \"reason\": \"httpx.ConnectTimeout: timed out\"}]}",
+      "latency": 7.43,
+      "usage": {
+        "completion_tokens": 483,
+        "prompt_tokens": 588,
+        "total_tokens": 1071
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "count_right": true,
+        "names_right": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

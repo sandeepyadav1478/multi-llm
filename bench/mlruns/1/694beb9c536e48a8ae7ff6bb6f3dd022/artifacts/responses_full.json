@@ -1,0 +1,56 @@
+{
+  "rows": [
+    {
+      "eval": "large_read",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 0.0,
+      "usage": {},
+      "note": "CONTEXT TOO SMALL",
+      "scores": {
+        "names_functions": false,
+        "role": false,
+        "no_line_numbers": true,
+        "under_limit": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_grep",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 0.0,
+      "usage": {},
+      "note": "CONTEXT TOO SMALL",
+      "scores": {
+        "top_file": false,
+        "top_count": false,
+        "terse": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_overflow",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 0.0,
+      "usage": {},
+      "note": "CONTEXT TOO SMALL",
+      "scores": {
+        "file_count": false,
+        "top_count": false,
+        "terse": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "Two tests failed:\n\n*   **`test_retry_backoff`** (`tests/test_client.py`): The calculated retry delays were incorrect. Expected `[2.0, 4.0, 8.0]`, but got `[2.0, 4.0, 6.0]`. The third delay was 6.0 instead of 8.0, indicating the backoff logic may be linear rather than exponential.\n*   **`test_token_refresh`** (`tests/test_session.py`): A connection timeout occurred (`httpx.ConnectTimeout`) while attempting to refresh the token via `post()`. The request exceeded the allowed time limit.",
+      "latency": 8.6,
+      "usage": {
+        "completion_tokens": 405,
+        "prompt_tokens": 528,
+        "total_tokens": 933
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": true,
+        "names_fail_2": true,
+        "gives_count": false,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "Fixes a clock-skew vulnerability where backward NTP jumps drain buckets by checking for negative elapsed time. Moves capacity capping into the refill phase so tokens never exceed limits during rapid updates. Removes the now-redundant post-consume min() call. These changes prevent denial-of-service via clock manipulation while ensuring strict adherence to rate limits.",
+      "latency": 4.64,
+      "usage": {
+        "completion_tokens": 466,
+        "prompt_tokens": 333,
+        "total_tokens": 799
+      },
+      "note": "",
+      "scores": {
+        "names_symbol": true,
+        "clock_guard": true,
+        "cap_change": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 2.17,
+      "usage": {
+        "completion_tokens": 196,
+        "prompt_tokens": 408,
+        "total_tokens": 604
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "Fix clock skew draining rate limit buckets\n\nNTP corrections can make clocks jump backward, causing negative\nelapsed times that silently drain the token bucket and lock callers.\nAdded explicit guard against negative elapsed time and capped tokens\nat max capacity to prevent overflow.",
+      "latency": 2.07,
+      "usage": {
+        "completion_tokens": 187,
+        "prompt_tokens": 341,
+        "total_tokens": 528
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "Merge overlapping time windows from `spans`. Returns a list of non-overlapping `(start, end)` tuples with gaps up to `gap` (default 0) filled. Input `spans` should be an iterable of `(start, end)` pairs. Overlapping or adjacent windows are merged into a single window covering their combined range. The output is sorted by start time.",
+      "latency": 1.73,
+      "usage": {
+        "completion_tokens": 158,
+        "prompt_tokens": 116,
+        "total_tokens": 274
+      },
+      "note": "",
+      "scores": {
+        "describes_merge": true,
+        "documents_gap": true,
+        "documents_return": true,
+        "no_invention": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "{\"service\":\"litellm-proxy.service\",\"state\":\"failed\",\"total\":30}",
+      "latency": 4.08,
+      "usage": {
+        "completion_tokens": 411,
+        "prompt_tokens": 440,
+        "total_tokens": 851
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "values": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.81,
+      "usage": {
+        "completion_tokens": 59,
+        "prompt_tokens": 29,
+        "total_tokens": 88
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "It limits requests by consuming tokens from a bucket that refills over time. Empty buckets block requests until new tokens appear, enforcing max throughput while preventing traffic spikes.",
+      "latency": 8.56,
+      "usage": {
+        "completion_tokens": 893,
+        "prompt_tokens": 27,
+        "total_tokens": 920
+      },
+      "note": "",
+      "scores": {
+        "under_30": true,
+        "not_stub": true,
+        "on_topic": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

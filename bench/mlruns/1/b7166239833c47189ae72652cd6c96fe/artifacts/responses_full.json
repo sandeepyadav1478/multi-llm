@@ -1,0 +1,72 @@
+{
+  "rows": [
+    {
+      "eval": "large_read",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "This shell module provides Multi-LLM controls for Claude Code, offering various ways to interact with the model, including using a Pro subscription, switching to a different subscription, or using free cloud models or a local model. It also includes functions for health checks and switching between different models.",
+      "latency": 0.64,
+      "usage": {
+        "completion_tokens": 58,
+        "prompt_tokens": 2469,
+        "total_tokens": 2527,
+        "queue_time": 0.161623879,
+        "prompt_time": 0.121580548,
+        "completion_time": 0.181365499,
+        "total_time": 0.302946047
+      },
+      "note": "",
+      "scores": {
+        "names_functions": false,
+        "role": true,
+        "no_line_numbers": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_grep",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "~/ai-configs/multi-llm/bench/bench.py:57",
+      "latency": 0.32,
+      "usage": {
+        "completion_tokens": 17,
+        "prompt_tokens": 3121,
+        "total_tokens": 3138,
+        "queue_time": 0.050262447,
+        "prompt_time": 0.166882874,
+        "completion_time": 0.048252422,
+        "total_time": 0.215135296
+      },
+      "note": "after backoff",
+      "scores": {
+        "top_file": true,
+        "top_count": false,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_overflow",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 0.0,
+      "usage": {},
+      "note": "CONTEXT TOO SMALL",
+      "scores": {
+        "file_count": false,
+        "top_count": false,
+        "terse": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    }
+  ]
+}

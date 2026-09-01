@@ -1,0 +1,352 @@
+"""The eval set. Kept separate from the runner only because it is the part you
+edit; bench.py is the part you don't.
+
+Scope is deliberately narrow: these models are here to do summarisation and
+short text writing on behalf of an Anthropic parent. They are NOT being tested
+as replacements for Opus, so there is nothing here about multi-step reasoning,
+code generation or tool use. Testing for those would produce numbers we have no
+use for.
+
+Every eval is graded programmatically. No LLM judge: a judge costs Anthropic
+tokens, which is the thing this whole setup exists to save, and it would make
+the scores unfalsifiable. Every criterion below is a fact about the string.
+
+Prompts are all under ~1,200 tokens on purpose, so that even the 1,500-token
+deployment (groq llama-3.1-8b) can attempt every eval. A model that only scores
+well because the small ones were excluded tells us nothing.
+"""
+
+import json
+import re
+
+# --- shared fixtures --------------------------------------------------------
+# Real-shaped artefacts, not toy ones. A summariser that handles "the cat sat on
+# the mat" tells you nothing about handling a pytest log.
+
+PYTEST_LOG = """\
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.3.2, pluggy-1.5.0
+rootdir: /srv/gateway
+plugins: anyio-4.4.0, asyncio-0.23.8, cov-5.0.0
+collected 47 items
+
+tests/test_auth.py ..........                                            [ 21%]
+tests/test_cache.py .......                                              [ 36%]
+tests/test_client.py ..........F..                                       [ 63%]
+tests/test_ratelimit.py ........                                         [ 80%]
+tests/test_session.py .......F.                                          [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_retry_backoff _________________________________
+
+    def test_retry_backoff():
+        c = Client(max_retries=3, backoff=2.0)
+        delays = c._compute_delays()
+>       assert delays == [2.0, 4.0, 8.0]
+E       AssertionError: assert [2.0, 4.0, 6.0] == [2.0, 4.0, 8.0]
+E         At index 2 diff: 6.0 != 8.0
+
+tests/test_client.py:184: AssertionError
+___________________________ test_token_refresh _________________________________
+
+    async def test_token_refresh():
+        s = Session(token=expired_token())
+>       await s.ensure_fresh()
+
+tests/test_session.py:91:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src/session.py:212: in ensure_fresh
+    resp = await self._refresh_client.post(self.refresh_url, json=payload)
+E       httpx.ConnectTimeout: timed out
+
+=========================== short test summary info ============================
+FAILED tests/test_client.py::test_retry_backoff - AssertionError: assert [2.0,...
+FAILED tests/test_session.py::test_token_refresh - httpx.ConnectTimeout: timed...
+=================== 2 failed, 45 passed, 0 skipped in 12.43s ===================
+"""
+
+DIFF = """\
+diff --git a/src/ratelimit.py b/src/ratelimit.py
+index 8a1f2c3..d4e5f60 100644
+--- a/src/ratelimit.py
++++ b/src/ratelimit.py
+@@ -14,11 +14,18 @@ class TokenBucket:
+     def __init__(self, capacity: int, refill_per_sec: float):
+         self.capacity = capacity
+         self.refill_per_sec = refill_per_sec
+         self.tokens = float(capacity)
+         self.updated = time.monotonic()
+
+     def consume(self, n: int = 1) -> bool:
+         now = time.monotonic()
+-        self.tokens += (now - self.updated) * self.refill_per_sec
++        elapsed = now - self.updated
++        # Clocks can step backwards under NTP correction; a negative elapsed
++        # would silently drain the bucket and lock every caller out.
++        if elapsed < 0:
++            elapsed = 0.0
++        self.tokens += elapsed * self.refill_per_sec
++        if self.tokens > self.capacity:
++            self.tokens = float(self.capacity)
+         self.updated = now
+-        self.tokens = min(self.tokens, self.capacity)
+         if self.tokens >= n:
+             self.tokens -= n
+             return True
+         return False
+"""
+
+# Deliberately boring haystack: the fact we ask for is unremarkable and appears
+# once. A model that skims and pattern-matches on "interesting" lines fails.
+SERVICE_DUMP = """\
+UNIT                          LOAD   ACTIVE SUB     DESCRIPTION
+accounts-daemon.service       loaded active running Accounts Service
+avahi-daemon.service          loaded active running Avahi mDNS/DNS-SD Stack
+bluetooth.service             loaded active running Bluetooth service
+containerd.service            loaded active running containerd container runtime
+cron.service                  loaded active running Regular background program
+cups.service                  loaded active running CUPS Scheduler
+dbus.service                  loaded active running D-Bus System Message Bus
+docker.service                loaded active running Docker Application Container
+fwupd.service                 loaded active running Firmware update daemon
+gdm.service                   loaded active running GNOME Display Manager
+irqbalance.service            loaded active running irqbalance daemon
+litellm-proxy.service         loaded failed failed  LiteLLM Proxy Server
+ModemManager.service          loaded active running Modem Manager
+networkd-dispatcher.service   loaded active running Dispatcher daemon for systemd
+NetworkManager.service        loaded active running Network Manager
+ollama.service                loaded active running Ollama Service
+polkit.service                loaded active running Authorization Manager
+postgresql@16-main.service    loaded active running PostgreSQL Cluster 16-main
+rsyslog.service               loaded active running System Logging Service
+snapd.service                 loaded active running Snap Daemon
+ssh.service                   loaded active running OpenBSD Secure Shell server
+switcheroo-control.service    loaded active running Switcheroo Control Proxy
+systemd-journald.service      loaded active running Journal Service
+systemd-logind.service        loaded active running User Login Management
+systemd-resolved.service      loaded active running Network Name Resolution
+systemd-timesyncd.service     loaded active running Network Time Synchronization
+systemd-udevd.service         loaded active running Rule-based Device Manager
+udisks2.service               loaded active running Disk Manager
+upower.service                loaded active running Daemon for power management
+wpa_supplicant.service        loaded active running WPA supplicant
+"""
+
+FUNCTION = '''\
+def merge_windows(spans, gap=0):
+    out = []
+    for start, end in sorted(spans):
+        if out and start - out[-1][1] <= gap:
+            out[-1][1] = max(out[-1][1], end)
+        else:
+            out.append([start, end])
+    return [tuple(w) for w in out]
+'''
+
+
+# --- graders ----------------------------------------------------------------
+# Each returns {criterion_name: bool}. Names become MLflow metric suffixes, so
+# keep them short and stable — renaming one orphans its history.
+
+def _words(t):
+    return len(t.split())
+
+
+def _has_all(t, needles):
+    low = t.lower()
+    return all(n.lower() in low for n in needles)
+
+
+def _grade_log(t):
+    low = t.lower()
+    return {
+        "names_fail_1": "test_retry_backoff" in low,
+        "names_fail_2": "test_token_refresh" in low,
+        # Spelled-out numbers count. "Two tests failed" is a correct summary and
+        # an earlier version of this grader marked it wrong for lacking a digit —
+        # penalising prose style, not accuracy, which is not what we are measuring.
+        "gives_count": bool(re.search(r"\b(2|two)\b", low))
+                       and bool(re.search(r"\b(45|47|forty[- ]?five|forty[- ]?seven)\b", low)),
+        # The dangerous failure mode for a summariser is the reassuring lie.
+        "no_false_pass": not re.search(r"all (tests? )?pass|passed successfully|no failures", low),
+        "under_limit": _words(t) <= 100,
+    }
+
+
+def _grade_diff(t):
+    low = t.lower()
+    return {
+        "names_symbol": "consume" in low or "tokenbucket" in low or "token bucket" in low,
+        # Both behaviour changes, not just the eye-catching one.
+        "clock_guard": _has_all(t, ["clock"]) or "negative" in low or "backward" in low,
+        "cap_change": "cap" in low or "clamp" in low or "overflow" in low or "exceed" in low,
+        "under_limit": _words(t) <= 80,
+    }
+
+
+def _grade_needle(t):
+    low = t.lower()
+    return {
+        "correct": "litellm" in low,
+        # Precision, not just recall: naming five services "to be safe" is a
+        # wrong answer dressed as a right one.
+        "no_extras": not any(s in low for s in ["ollama", "docker", "postgres", "bluetooth"]),
+        "terse": _words(t) <= 25,
+    }
+
+
+def _grade_commit(t):
+    lines = [l for l in t.strip().splitlines() if l.strip()]
+    subj = lines[0].strip() if lines else ""
+    subj = re.sub(r"^[`*#\s]+|[`*\s]+$", "", subj)
+    low = t.lower()
+    return {
+        "subject_len": 0 < len(subj) <= 72,
+        # Conventional-commit prefix is fine; a bare gerund/past tense is not.
+        "imperative": bool(re.match(r"^(\w+(\([^)]*\))?:\s*)?[a-z]+", subj, re.I))
+                      and not re.match(r"^(added|fixed|updated|changed|made)\b", subj, re.I),
+        "mentions_change": _has_all(low, ["clock"]) or "negative" in low or "backward" in low
+                           or "cap" in low or "clamp" in low,
+        "no_diff_echo": "diff --git" not in low and "@@" not in t,
+    }
+
+
+def _grade_docstring(t):
+    low = t.lower()
+    return {
+        "describes_merge": "merge" in low or "overlap" in low or "combin" in low,
+        "documents_gap": "gap" in low,
+        "documents_return": "return" in low,
+        # The function does not sort in place, mutate its input, or dedupe.
+        "no_invention": not any(s in low for s in ["in place", "in-place", "mutat", "dedupl"]),
+    }
+
+
+def _grade_json(t):
+    # A pipeline consumer does json.loads() on this. Fenced or prefixed output
+    # is a failure even if a human could read it — that is the whole point.
+    try:
+        d = json.loads(t.strip())
+    except Exception:
+        return {"parses": False, "schema": False, "values": False}
+    ok_schema = isinstance(d, dict) and set(d) == {"service", "state", "total"}
+    return {
+        "parses": True,
+        "schema": ok_schema,
+        "values": ok_schema and "litellm" in str(d.get("service", "")).lower()
+                  and str(d.get("state", "")).lower() == "failed"
+                  and str(d.get("total")) == "30",
+    }
+
+
+def _grade_exact(t):
+    s = t.strip()
+    return {
+        "exact": s == "ACKNOWLEDGED",
+        # Near-misses matter separately: a model that says the right thing with
+        # a preamble is usable behind a regex; one that says the wrong thing is not.
+        "contains": "ACKNOWLEDGED" in s,
+    }
+
+
+def _grade_length(t):
+    n = _words(t)
+    return {
+        "under_30": n <= 30,
+        "not_stub": n >= 8,
+        "on_topic": "token" in t.lower() or "bucket" in t.lower() or "rate" in t.lower(),
+    }
+
+
+# --- the set ----------------------------------------------------------------
+# category is what gets rolled up into a headline score. Keep it to the three
+# roles we actually want to fill.
+
+EVALS = [
+    dict(id="sum_log", category="summarise", grade=_grade_log,
+         prompt="Summarise this test run for a developer who did not run it. "
+                "State what failed and why. Be brief.\n\n" + PYTEST_LOG),
+
+    dict(id="sum_diff", category="summarise", grade=_grade_diff,
+         prompt="Summarise what this diff changes and why, in under 80 words.\n\n" + DIFF),
+
+    dict(id="sum_needle", category="summarise", grade=_grade_needle,
+         prompt="Which service is not running? Answer with just the service name.\n\n"
+                + SERVICE_DUMP),
+
+    dict(id="write_commit", category="write", grade=_grade_commit,
+         prompt="Write a git commit message for this diff. Subject line under 72 "
+                "characters, imperative mood, then a short body.\n\n" + DIFF),
+
+    dict(id="write_docstring", category="write", grade=_grade_docstring,
+         prompt="Write a concise Python docstring for this function. Output only the "
+                "docstring text, no code.\n\n" + FUNCTION),
+
+    dict(id="fmt_json", category="format", grade=_grade_json,
+         prompt="Return ONLY a JSON object, no markdown fence, no explanation, with "
+                'exactly these keys: "service" (the one failed unit), "state" (its SUB '
+                'value), "total" (how many units are listed).\n\n' + SERVICE_DUMP),
+
+    dict(id="fmt_exact", category="format", grade=_grade_exact,
+         prompt="Reply with exactly the single word ACKNOWLEDGED. No punctuation, no "
+                "explanation, nothing else."),
+
+    dict(id="fmt_length", category="format", grade=_grade_length,
+         prompt="In 30 words or fewer, explain what a token bucket rate limiter does."),
+]
+
+# Applied to every eval on top of its own grader. These are not style points:
+# a leaked reasoning block or an empty body breaks any pipeline that consumes
+# the output, regardless of whether the content was correct. Both were observed
+# for real on these backends.
+THINK_LEAK = re.compile(r"</?think>|<\|channel\|>|<\|start\|>|^analysis\b", re.I | re.M)
+
+
+def universal(text):
+    return {
+        "non_empty": bool(text and text.strip()),
+        "no_leak": not THINK_LEAK.search(text or ""),
+    }
+
+
+if __name__ == "__main__":
+    # Graders are the part that silently rots, so they get the one check.
+    # Each is fed a known-good answer and a known-bad one.
+    good = {
+        "sum_log": "2 of 47 tests failed: test_retry_backoff got 6.0 not 8.0 for the "
+                   "third delay, and test_token_refresh hit an httpx ConnectTimeout. 45 passed.",
+        "sum_diff": "TokenBucket.consume now clamps negative elapsed time to zero so an "
+                    "NTP clock step backwards cannot drain the bucket, and caps tokens at "
+                    "capacity before spending rather than after.",
+        "sum_needle": "litellm-proxy.service",
+        "write_commit": "fix: guard token bucket against backward clock steps\n\n"
+                        "Clamp negative elapsed and cap tokens before spending.",
+        "write_docstring": "Merge overlapping or adjacent spans. Spans closer than gap are "
+                           "combined. Returns a new list of tuples.",
+        "fmt_json": '{"service": "litellm-proxy.service", "state": "failed", "total": 30}',
+        "fmt_exact": "ACKNOWLEDGED",
+        "fmt_length": "It allows bursts up to a capacity of tokens, refilling at a steady "
+                      "rate, and rejects a request when no token is available.",
+    }
+    bad = {
+        "sum_log": "All tests passed successfully.",
+        "sum_diff": "Some code was changed in a file.",
+        "sum_needle": "docker.service, ollama.service and bluetooth.service look suspicious.",
+        "write_commit": "Added a really long subject line that rambles well past the "
+                        "seventy-two character limit that git conventions ask for here",
+        "write_docstring": "Sorts the list in place and deduplicates it.",
+        "fmt_json": '```json\n{"service": "litellm"}\n```',
+        "fmt_exact": "Sure! ACKNOWLEDGED.",
+        "fmt_length": "ok",
+    }
+    for e in EVALS:
+        g, b = e["grade"](good[e["id"]]), e["grade"](bad[e["id"]])
+        assert all(g.values()), f"{e['id']}: good answer failed {[k for k,v in g.items() if not v]}"
+        assert not all(b.values()), f"{e['id']}: bad answer scored full marks"
+    assert universal("hi") == {"non_empty": True, "no_leak": True}
+    assert not universal("<think>hmm</think>ok")["no_leak"]
+    assert not universal("")["non_empty"]
+    # fmt_exact is the one grader with a deliberate partial: preamble should
+    # cost the exact point but keep the contains point.
+    assert _grade_exact("Sure! ACKNOWLEDGED.") == {"exact": False, "contains": True}
+    print(f"graders ok: {len(EVALS)} evals")

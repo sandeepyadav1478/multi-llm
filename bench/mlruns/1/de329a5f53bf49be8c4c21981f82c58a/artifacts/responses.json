@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","rep","score","failed","latency","note","out_tokens","text"],"data":[["large_inject","summarise","large",0,1.0,"",1.31,"",642,"A C++ project named 'core' was being compiled using CMake. The build process failed due to an error in `src\/socket.cpp` where the function `connect_timeout` was used but not declared."]]}

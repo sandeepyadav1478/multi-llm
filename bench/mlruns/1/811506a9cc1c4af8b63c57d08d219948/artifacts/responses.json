@@ -1,0 +1,232 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "Two tests failed:\n\n1.  **`test_retry_backoff`**: The retry delay calculation logic is incorrect. It returned `[2.0, 4.0, 6.0]` instead of the expected `[2.0, 4.0, 8.0]`.\n2.  **`test_token_refresh`**: The test encountered an `httpx.ConnectTimeout` while attempting to post to the refresh URL.",
+      "latency": 1.53,
+      "usage": {
+        "completion_tokens": 793,
+        "prompt_tokens": 482,
+        "total_tokens": 1275,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 702,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 384
+        }
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": true,
+        "names_fail_2": true,
+        "gives_count": false,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "This change prevents the token bucket from incorrectly draining tokens when the system clock steps backwards (e.g., due to NTP correction). It clamps negative elapsed time to zero to avoid locking out callers. It also ensures tokens never exceed capacity, improving robustness against time synchronization issues.",
+      "latency": 1.62,
+      "usage": {
+        "completion_tokens": 895,
+        "prompt_tokens": 307,
+        "total_tokens": 1202,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 838,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 256
+        }
+      },
+      "note": "",
+      "scores": {
+        "names_symbol": true,
+        "clock_guard": true,
+        "cap_change": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 0.69,
+      "usage": {
+        "completion_tokens": 517,
+        "prompt_tokens": 401,
+        "total_tokens": 918,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 511,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 384
+        }
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "Guard TokenBucket against NTP clock skew\n\nSystem clocks can step backwards during NTP synchronization. A negative\nelapsed time would incorrectly drain the bucket, causing a denial of\nservice. Clamp elapsed time to zero to ensure correct behavior.",
+      "latency": 1.78,
+      "usage": {
+        "completion_tokens": 947,
+        "prompt_tokens": 315,
+        "total_tokens": 1262,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 899,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 256
+        }
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "\"\"\"\nMerge overlapping or adjacent spans within a specified gap.\n\nArgs:\n    spans: List of (start, end) intervals.\n    gap: Maximum distance between intervals to merge.\n\nReturns:\n    List of merged (start, end) tuples.\n\"\"\"",
+      "latency": 3.04,
+      "usage": {
+        "completion_tokens": 1960,
+        "prompt_tokens": 103,
+        "total_tokens": 2063,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 1910,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "describes_merge": true,
+        "documents_gap": true,
+        "documents_return": true,
+        "no_invention": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "{\n  \"service\": \"litellm-proxy.service\",\n  \"state\": \"failed\",\n  \"total\": 30\n}",
+      "latency": 52.34,
+      "usage": {
+        "completion_tokens": 784,
+        "prompt_tokens": 433,
+        "total_tokens": 1217,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 756,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 384
+        }
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "values": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.53,
+      "usage": {
+        "completion_tokens": 130,
+        "prompt_tokens": 24,
+        "total_tokens": 154,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 126,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "It regulates traffic by refilling a bucket with tokens at a steady rate. Requests consume tokens; if empty, traffic is blocked.",
+      "latency": 1.53,
+      "usage": {
+        "completion_tokens": 977,
+        "prompt_tokens": 22,
+        "total_tokens": 999,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 950,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "under_30": true,
+        "not_stub": true,
+        "on_topic": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

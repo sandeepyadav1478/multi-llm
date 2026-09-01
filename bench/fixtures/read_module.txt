@@ -1,0 +1,144 @@
+     1	# Multi-LLM controls for Claude Code.  Sourced from ~/.zshrc.
+     2	#
+     3	# Three ways to get work done, in descending order of quality:
+     4	#
+     5	#   claude / cc     Anthropic, your Pro subscription.  Opus + xhigh effort.
+     6	#   ccacct use X    switch to the other Pro subscription when the first is spent.
+     7	#   ccfree          Claude Code driven by free cloud models via LiteLLM.
+     8	#   cclocal         Claude Code driven by the local ollama model.  No quota, offline.
+     9	#   llm "..."       one-shot prompt to a free/local model, for chores.
+    10	#
+    11	# Services are on-demand:  olresume / llmresume  (see aliases further down in .zshrc)
+    12	
+    13	# --- shared endpoint -------------------------------------------------------
+    14	export LITELLM_BASE="http://localhost:4000"
+    15	export LITELLM_KEY="REDACTED-LOCAL-KEY"
+    16	
+    17	# CLAUDE_CODE_MAX_OUTPUT_TOKENS is load-bearing, not a tuning knob.
+    18	# Claude Code otherwise asks for far more than free backends allow, and LiteLLM
+    19	# will not clamp an oversized client value -- verified, it forwards it and the
+    20	# request fails. 32000 is accepted by every backend in the Claude Code chain and
+    21	# is far more output than a turn ever needs.
+    22	#
+    23	# Providers also bill input + max_tokens together against their rate limits, so
+    24	# this number is not free: it is why Groq (free TPM 6k-12k per model) is out of
+    25	# the Claude Code chain entirely -- one turn bills at ~73,889 tokens there.
+    26	# Details: ~/ai-configs/multi-llm/docs/measurements.md
+    27	#
+    28	# MAX_THINKING_TOKENS=0 is REQUIRED, not a preference. With extended thinking on,
+    29	# every turn dies with:
+    30	#     API Error: Content block is not a thinking block
+    31	# LiteLLM synthesises Anthropic `thinking` blocks out of whatever reasoning field
+    32	# the backend emits, and Claude Code rejects the result. Setting the budget to 0
+    33	# stops it asking for thinking at all, and the same prompt then returns cleanly.
+    34	# This is the single switch that makes Claude Code work against these backends;
+    35	# without it nothing else in this file matters.
+    36	#
+    37	# Note this is thinking, not effort: /effort xhigh on real Anthropic models is
+    38	# unaffected, because that runs through `claude`, not `ccfree`.
+    39	_CC_MULTILLM_ENV=(
+    40	  "ANTHROPIC_BASE_URL=$LITELLM_BASE"
+    41	  "ANTHROPIC_AUTH_TOKEN=$LITELLM_KEY"
+    42	  "CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000"
+    43	  "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"
+    44	  "MAX_THINKING_TOKENS=0"
+    45	)
+    46	
+    47	# --- Claude Code on free cloud models --------------------------------------
+    48	# Tiers map onto the aliases in ~/ai-configs/litellm/config.yaml. Each one has a
+    49	# fallback chain ending at the local model, so a spent provider degrades instead
+    50	# of failing.
+    51	ccfree() {
+    52	  env "${_CC_MULTILLM_ENV[@]}" \
+    53	      ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-8 \
+    54	      ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-5-0 \
+    55	      ANTHROPIC_DEFAULT_HAIKU_MODEL=claude-haiku-4-5 \
+    56	      ANTHROPIC_SMALL_FAST_MODEL=claude-haiku-4-5 \
+    57	      claude "$@"
+    58	}
+    59	
+    60	# --- Claude Code fully local ------------------------------------------------
+    61	# Everything, including the background/summarising model, on vibeforged-14b.
+    62	# Needs ollama up: olresume
+    63	cclocal() {
+    64	  env "${_CC_MULTILLM_ENV[@]}" \
+    65	      ANTHROPIC_DEFAULT_OPUS_MODEL=local \
+    66	      ANTHROPIC_DEFAULT_SONNET_MODEL=local \
+    67	      ANTHROPIC_DEFAULT_HAIKU_MODEL=local \
+    68	      ANTHROPIC_SMALL_FAST_MODEL=local \
+    69	      claude --model local "$@"
+    70	}
+    71	
+    72	# --- chore session ----------------------------------------------------------
+    73	# A NORMAL Anthropic session -- same model, same /effort -- that treats offloading
+    74	# as the default rather than something to remember. For sessions that are mostly
+    75	# log reading, summarising and drafting, which is exactly the work the free models
+    76	# measure at 95-98% on (docs/model-quality.md).
+    77	#
+    78	# The parent stays Anthropic on purpose. The free models never run unsupervised;
+    79	# they get handed a chore and their answer is read before anything is done with it.
+    80	#
+    81	# This is the opt-in switch for the `offload` skill. Plain `claude` still has the
+    82	# skill available and will use it when it fits -- this just stops it being a
+    83	# judgement call every time.
+    84	ccchore() {
+    85	  claude --append-system-prompt "$(cat <<'EOF'
+    86	Offload mode is ON for this session.
+    87	
+    88	Before reading any file, log, or command output larger than roughly 2000 tokens,
+    89	pipe it to `llm` and read only the summary -- do not read the raw text into
+    90	context. `cat big.log | llm "summarise the errors"` costs ~300 tokens; reading
+    91	big.log costs 50k, and keeps costing it on every later turn.
+    92	
+    93	Follow the `offload` skill for tiers and, more importantly, for what must never
+    94	be offloaded (anything numeric, anything a decision depends on, anything needing
+    95	this conversation). You remain responsible for every result: read each summary
+    96	and sanity-check it before acting on it.
+    97	EOF
+    98	)" "$@"
+    99	}
+   100	
+   101	# --- health check -----------------------------------------------------------
+   102	# Answers "what can I actually use right now?" without guessing.
+   103	#
+   104	# Probes the dbg-* aliases, NOT smart/fast/default. Those are model groups with
+   105	# fallback chains, so they answer happily while the backend you care about is
+   106	# dead -- an earlier version of this function checked them and reported four
+   107	# healthy tiers on a day when every OpenRouter model and SambaNova were spent.
+   108	# The dbg-* aliases have fallbacks explicitly disabled, so a dead route says so.
+   109	llmcheck() {
+   110	  print -r -- "litellm : $(systemctl --user is-active litellm-proxy 2>/dev/null)"
+   111	  print -r -- "ollama  : $(systemctl is-active ollama 2>/dev/null)"
+   112	  print -r -- "account : $(ccacct which 2>/dev/null)"
+   113	  print -r -- "backends (isolated, no fallback):"
+   114	  # $EPOCHREALTIME is empty without this module, which silently makes every
+   115	  # timing print 0.0s.
+   116	  zmodload -i zsh/datetime
+   117	  # Declared once, outside the loop: a bare `local got` on an already-set variable
+   118	  # makes zsh *display* it (typeset semantics), leaking a "got=ok" line per probe.
+   119	  local m t0 got
+   120	  for m in dbg-cerebras dbg-cerebras-zai dbg-sambanova dbg-groq \
+   121	           dbg-or-ultra dbg-or-super dbg-or-ling dbg-local; do
+   122	    t0=$EPOCHREALTIME
+   123	    got=$(curl -s --max-time 60 "$LITELLM_BASE/v1/chat/completions" \
+   124	            -H "Authorization: Bearer $LITELLM_KEY" -H 'Content-Type: application/json' \
+   125	            -d "{\"model\":\"$m\",\"max_tokens\":256,\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}" \
+   126	          | python3 -c 'import json,sys
+   127	try:
+   128	    d=json.load(sys.stdin)
+   129	except Exception:
+   130	    print("unreachable"); raise SystemExit
+   131	if "error" in d:
+   132	    msg=str(d["error"].get("message",""))
+   133	    # Three distinct states, only the last is a real problem:
+   134	    #   QUOTA SPENT  - provider refused, 429. Free tiers here are capped per DAY.
+   135	    #   COOLING DOWN - LiteLLM parked it locally after failures (cooldown_time).
+   136	    #                  It never left the machine, so this is our state, not theirs.
+   137	    if "No deployments available" in msg: print("COOLING DOWN")
+   138	    elif "ate limit" in msg or "429" in msg:  print("QUOTA SPENT")
+   139	    else: print("ERR "+msg[:40])
+   140	else:
+   141	    print("ok")' 2>/dev/null)
+   142	    printf '  %-17s %-14s %.1fs\n' "$m" "$got" "$(( EPOCHREALTIME - t0 ))"
+   143	  done
+   144	}

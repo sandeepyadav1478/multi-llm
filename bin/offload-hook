@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""PreToolUse hook: stop bulk text entering an Anthropic context by accident.
+
+Why this exists at all. Three things in this setup save tokens; two of them are
+hooks (`rtk hook claude`, `tokensave`) and are enforced, and one of them was a
+rule in ~/.claude/rules/offload.md asking the model to remember to pipe. Measured
+2026-07-29: rtk had saved 352.6K tokens over 2,138 commands; the offload path had
+7 calls and had saved nothing. Same idea, same quality backends, two orders of
+magnitude apart -- the only difference is that nobody has to remember a hook.
+
+What it does NOT do is compress. rtk trims output and averages 11% on `rtk read`,
+which still let ~1.8M tokens of file content through. Offloading removes the text
+instead of shrinking it (`rtk pytest -q` shows the shape: 99.9%), and the saving
+compounds -- context persists, so a 62 KB log read on turn 3 is charged again on
+turns 4..n. That recurrence, not the single read, is what this is protecting.
+
+Contract (Claude Code PreToolUse):
+  stdin  {"tool_name": ..., "tool_input": {...}}
+  exit 0 allow. stdout, if any, is shown as a note.
+  exit 2 block. stderr goes back to the model as the reason.
+"""
+import json
+import os
+import re
+import shlex
+import sys
+
+# 8 KB, and the number is measured, not chosen. bench/evals.py records the real
+# distribution over 112 Claude Code sessions / 5,930 tool calls: the median tool
+# result is 135 chars, only 6.2% exceed 4,000, and THAT tail is the whole
+# offloadable population -- median 8.4k chars for Read, 6.2k for Bash.
+#
+# This was 25 KB first, which is three times the tail's own median: it would have
+# fired on a sliver of a 6.2% tail, i.e. almost never, which is exactly the
+# failure this hook exists to prevent. 8 KB tracks the measured tail instead, and
+# buys two things for free. It is the size bench/'s `large` tier already tests
+# (large_read 8,198 chars, large_grep 8,944), so what the hook routes is what the
+# suite measures. And ~2k tokens still fits `fast` (3,500 input) and `smart`
+# (4,000), so those tiers keep serving their own traffic -- at 25 KB both
+# overflowed and were silently swapped out by the router. `bench.py --routing`
+# is the check for that, and it reads this constant rather than copying it.
+LIMIT = 8 * 1024
+
+# Only ever text whose VALUE IS ITS GIST. Source, JSON, YAML, CSV and lockfiles
+# are deliberately absent: summarising them loses the exactness they are read
+# for, and a hook that blocks reading code is a hook that gets deleted.
+BULK_SUFFIX = {".log", ".out", ".err", ".txt"}
+
+# Output size is unknowable before the run, so these are advised, never blocked.
+RUNNERS = re.compile(
+    r"\b(pytest|tox|nox|jest|vitest|go\s+test|cargo\s+(test|build|check)"
+    r"|make|ninja|npm\s+(test|run\s+build)|pnpm\s+(test|build)|gradle|mvn)\b")
+
+# Same "unknowable before it runs" problem as RUNNERS: a diff's size depends on
+# repo state, not a file we can stat. --stat/--numstat/--name-only/--name-status
+# are excluded -- those are already small summaries, not the bulky case named in
+# ~/.claude/rules/offload.md ("large diffs").
+GIT_BULK = re.compile(
+    r"\bgit\s+(diff\b(?!.*--(stat|numstat|name-only|name-status))"
+    r"|show\b(?!.*--stat)"
+    r"|log\b.*--?p(atch)?\b)")
+
+DUMPERS = ("cat", "tail", "head", "less", "bat", "more")
+
+
+def _tokens(n):
+    return f"~{round(n / 4 / 1000):d}k tokens"
+
+
+def _bulky(path):
+    """A file worth offloading: big, real, and gist-shaped."""
+    p = str(path)
+    low = p.lower()
+    if not (any(low.endswith(s) for s in BULK_SUFFIX) or ".log" in low
+            or os.sep + "logs" + os.sep in low):
+        return 0
+    try:
+        n = os.path.getsize(p)
+    except OSError:      # gone, a directory, or not ours to stat -- not our call
+        return 0
+    return n if n > LIMIT else 0
+
+
+def decide(tool, inp):
+    """-> (exit_code, message). Anything unrecognised allows silently."""
+    if os.environ.get("OFFLOAD_SKIP"):
+        return 0, ""
+
+    if tool == "Read":
+        # A ranged read is already the targeted case. It is both cheap and a
+        # sign the caller wants specific bytes, so never stand in its way.
+        if inp.get("offset") or inp.get("limit"):
+            return 0, ""
+        path = inp.get("file_path", "")
+        n = _bulky(path)
+        if not n:
+            return 0, ""
+        return 2, (
+            f"BLOCKED: {path} is {n // 1024} KB ({_tokens(n)}), and context "
+            f"persists -- you would be charged for it again on every remaining "
+            f"turn of this session, not once.\n\n"
+            f"  cat {shlex.quote(path)} | llm \"summarise ...\"\n\n"
+            f"That sends the bytes to a free backend and returns ~300 tokens. "
+            f"Measured quality on exactly this chore: 97-99% "
+            f"(~/ai-configs/multi-llm/docs/model-quality.md).\n\n"
+            f"Need the exact bytes -- counting, security, correctness, or a "
+            f"decision that must be right? Do NOT offload it. Either Read with "
+            f"offset/limit for the part you need, or run "
+            f"`OFFLOAD_SKIP=1 cat {shlex.quote(path)}`.")
+
+    if tool == "Grep":
+        # files_with_matches / count are already small by construction. Only
+        # content mode without a head_limit can dump an unbounded number of
+        # matched lines -- the "large_grep" case the LIMIT comment above cites.
+        if inp.get("output_mode") == "content" and not inp.get("head_limit"):
+            return 0, ("note: content-mode grep with no head_limit can return "
+                       "a lot of text, and context persists. If you only need "
+                       "the gist, set head_limit or offload the equivalent "
+                       "`grep`/`rg` shell command through `llm`.")
+        return 0, ""
+
+    if tool != "Bash":
+        return 0, ""
+
+    cmd = inp.get("command", "")
+    # Already offloading, or explicitly opted out inline.
+    if re.search(r"\bllm\b", cmd) or "OFFLOAD_SKIP" in cmd:
+        return 0, ""
+
+    if RUNNERS.search(cmd):
+        # Advice, not a block: the failing test name is usually the whole point
+        # of the run, and summarising can lose it. The caller decides.
+        return 0, ("note: this can produce a lot of output, and context "
+                   "persists. If you only need the gist, append "
+                   "`| llm \"summarise the failures\"`.")
+
+    if GIT_BULK.search(cmd):
+        return 0, ("note: this can produce a lot of output, and context "
+                   "persists. If you only need the gist, append "
+                   "`| llm \"summarise this diff\"`.")
+
+    # A plain dump of one big log is the unambiguous case. Compound commands are
+    # left alone -- guessing at `&&`/`;`/subshells is how a hook blocks something
+    # it never understood.
+    if re.search(r"[;&|]|<<|\$\(", cmd):
+        return 0, ""
+    try:
+        parts = shlex.split(cmd)
+    except ValueError:
+        return 0, ""
+    if not parts or os.path.basename(parts[0]) not in DUMPERS:
+        return 0, ""
+    # stdout redirected to a file never reaches the model, so there is nothing to
+    # save and blocking it is pure obstruction (`cat a.log > b.log` is a copy).
+    # Deliberately only fd 1: `2>/dev/null` leaves stdout heading for the context.
+    if any(re.match(r"^1?>>?", p) for p in parts[1:]):
+        return 0, ""
+    for arg in parts[1:]:
+        n = _bulky(arg) if not arg.startswith("-") else 0
+        if n:
+            return 2, (
+                f"BLOCKED: {arg} is {n // 1024} KB ({_tokens(n)}), and reading "
+                f"it in order to shorten it is the most expensive way to "
+                f"shorten it -- context persists, so it is charged on every "
+                f"later turn too.\n\n"
+                f"  {cmd} | llm \"summarise ...\"\n\n"
+                f"Need the exact bytes (counting, security, correctness)? "
+                f"Re-run as `OFFLOAD_SKIP=1 {cmd}`.")
+    return 0, ""
+
+
+def main():
+    try:
+        ev = json.load(sys.stdin)
+    except Exception:
+        return 0        # never break the tool call over a malformed event
+    code, msg = decide(ev.get("tool_name", ""), ev.get("tool_input") or {})
+    if msg:
+        print(msg, file=sys.stderr if code else sys.stdout)
+    return code
+
+
+def _selftest(tmp):
+    big = os.path.join(tmp, "build.log")
+    with open(big, "w") as f:
+        f.write("x" * (60 * 1024))
+    small = os.path.join(tmp, "tiny.log")
+    open(small, "w").write("x")
+    src = os.path.join(tmp, "main.py")
+    with open(src, "w") as f:
+        f.write("x" * (60 * 1024))
+
+    assert decide("Read", {"file_path": big})[0] == 2, "big log must block"
+    assert decide("Read", {"file_path": small})[0] == 0, "small log must pass"
+    assert decide("Read", {"file_path": src})[0] == 0, "source must never block"
+    assert decide("Read", {"file_path": big, "limit": 50})[0] == 0, "ranged read passes"
+    assert decide("Read", {"file_path": tmp + "/nope.log"})[0] == 0, "missing file passes"
+
+    assert decide("Bash", {"command": f"cat {big}"})[0] == 2, "dump of big log blocks"
+    assert decide("Bash", {"command": f"cat {big} | llm 'sum'"})[0] == 0, "already piped"
+    assert decide("Bash", {"command": f"OFFLOAD_SKIP=1 cat {big}"})[0] == 0, "opt-out"
+    assert decide("Bash", {"command": f"cat {src}"})[0] == 0, "source dump passes"
+    assert decide("Bash", {"command": f"cat {big} && ls"})[0] == 0, "compound left alone"
+    assert decide("Bash", {"command": f"tail -n 20 {big}"})[0] == 2, "tail of big log blocks"
+    assert decide("Bash", {"command": "grep -r foo ."})[0] == 0, "unrelated passes"
+    assert decide("Bash", {"command": f"cat {big} > /tmp/c"})[0] == 0, "stdout to file"
+    assert decide("Bash", {"command": f"cat {big} >> /tmp/c"})[0] == 0, "append to file"
+    assert decide("Bash", {"command": f"cat {big} >/tmp/c"})[0] == 0, "no-space redirect"
+    # stdout is still headed for the context here; only stderr was redirected.
+    assert decide("Bash", {"command": f"cat {big} 2>/dev/null"})[0] == 2, "2> still blocks"
+    assert decide("Bash", {"command": f"cat -n {big}"})[0] == 2, "flag before path"
+
+    code, msg = decide("Bash", {"command": "pytest -q"})
+    assert code == 0 and "llm" in msg, "runners advise, never block"
+    assert decide("Grep", {"pattern": "x"})[0] == 0, "other tools pass"
+
+    code, msg = decide("Bash", {"command": "git diff"})
+    assert code == 0 and "llm" in msg, "git diff advises"
+    code, msg = decide("Bash", {"command": "git log -p"})
+    assert code == 0 and "llm" in msg, "git log -p advises"
+    code, msg = decide("Bash", {"command": "git show HEAD"})
+    assert code == 0 and "llm" in msg, "git show advises"
+    assert decide("Bash", {"command": "git diff --stat"})[1] == "", "git diff --stat is already small"
+    assert decide("Bash", {"command": "git status"})[1] == "", "unrelated git passes silently"
+
+    code, msg = decide("Grep", {"pattern": "x", "output_mode": "content"})
+    assert code == 0 and "head_limit" in msg, "content mode with no head_limit advises"
+    assert decide("Grep", {"pattern": "x", "output_mode": "content", "head_limit": 20})[1] == "", "head_limit set stays quiet"
+    assert decide("Grep", {"pattern": "x", "output_mode": "files_with_matches"})[1] == "", "files_with_matches stays quiet"
+
+    os.environ["OFFLOAD_SKIP"] = "1"
+    assert decide("Read", {"file_path": big})[0] == 0, "env opt-out wins"
+    del os.environ["OFFLOAD_SKIP"]
+    print("offload-hook selftest: ok")
+
+
+if __name__ == "__main__":
+    if "--selftest" in sys.argv:
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            _selftest(d)
+    else:
+        sys.exit(main())

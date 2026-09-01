@@ -1,0 +1,224 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "**2 of 47 tests failed:**\n\n1. **`test_retry_backoff`** (`test_client.py`): The backoff calculation is incorrect. It returned `[2.0, 4.0, 6.0]` instead of the expected exponential `[2.0, 4.0, 8.0]`. Review the `_compute_delays()` logic.\n2. **`test_token_refresh`** (`test_session.py`): The token refresh HTTP request timed out (`httpx.ConnectTimeout`). Likely caused by a missing mock for the refresh endpoint or a test environment/network misconfiguration.\n\nAll other tests passed.",
+      "latency": 2.94,
+      "usage": {
+        "completion_tokens": 1345,
+        "prompt_tokens": 528,
+        "total_tokens": 1873,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1208
+        },
+        "queue_time": 0.048582734,
+        "prompt_time": 0.037589485,
+        "completion_time": 2.75259114,
+        "total_time": 2.790180625
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": true,
+        "names_fail_2": true,
+        "gives_count": true,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "This diff updates `TokenBucket.consume` to safely handle NTP clock adjustments. It calculates elapsed time, clamps negative values to zero to prevent silent token drainage and caller lockouts, and explicitly caps tokens at the bucket's maximum capacity. These changes ensure the rate limiter remains robust when system time steps backwards.",
+      "latency": 64.84,
+      "usage": {
+        "completion_tokens": 1086,
+        "prompt_tokens": 333,
+        "total_tokens": 1419,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1021
+        },
+        "queue_time": 0.049266601,
+        "prompt_time": 0.024598578,
+        "completion_time": 2.128219758,
+        "total_time": 2.152818336
+      },
+      "note": "after backoff",
+      "scores": {
+        "names_symbol": true,
+        "clock_guard": true,
+        "cap_change": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 1.99,
+      "usage": {
+        "completion_tokens": 941,
+        "prompt_tokens": 408,
+        "total_tokens": 1349,
+        "completion_tokens_details": {
+          "reasoning_tokens": 933
+        },
+        "queue_time": 0.049319161,
+        "prompt_time": 0.029769778,
+        "completion_time": 1.853863509,
+        "total_time": 1.8836332869999999
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "Fix token bucket drain on clock skew\n\nClocks can step backwards due to NTP corrections, resulting in a\nnegative elapsed time. This caused the token bucket to drain tokens\ninstead of refilling, potentially locking out all callers.\n\nClamp elapsed time to zero to prevent this.",
+      "latency": 2.63,
+      "usage": {
+        "completion_tokens": 1320,
+        "prompt_tokens": 341,
+        "total_tokens": 1661,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1259
+        },
+        "queue_time": 0.050566715,
+        "prompt_time": 0.024807344,
+        "completion_time": 2.504824514,
+        "total_time": 2.529631858
+      },
+      "note": "after backoff",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "Merge overlapping or closely spaced intervals based on a gap tolerance.\n\nArgs:\n    spans: Iterable of (start, end) intervals.\n    gap: Maximum allowed gap between consecutive intervals to merge them (default 0).\n\nReturns:\n    List of merged (start, end) tuples, sorted by start time.",
+      "latency": 3.16,
+      "usage": {
+        "completion_tokens": 1526,
+        "prompt_tokens": 116,
+        "total_tokens": 1642,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1457
+        },
+        "queue_time": 0.115227571,
+        "prompt_time": 0.008474168,
+        "completion_time": 2.99472134,
+        "total_time": 3.003195508
+      },
+      "note": "after backoff",
+      "scores": {
+        "describes_merge": true,
+        "documents_gap": true,
+        "documents_return": true,
+        "no_invention": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "{\"service\": \"litellm-proxy.service\", \"state\": \"failed\", \"total\": 30}",
+      "latency": 3.3,
+      "usage": {
+        "completion_tokens": 1619,
+        "prompt_tokens": 440,
+        "total_tokens": 2059,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1593
+        },
+        "queue_time": 0.053225266,
+        "prompt_time": 0.039533452,
+        "completion_time": 3.108407126,
+        "total_time": 3.147940578
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "values": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.62,
+      "usage": {
+        "completion_tokens": 234,
+        "prompt_tokens": 29,
+        "total_tokens": 263,
+        "completion_tokens_details": {
+          "reasoning_tokens": 228
+        },
+        "queue_time": 0.050076405,
+        "prompt_time": 0.000369365,
+        "completion_time": 0.445852521,
+        "total_time": 0.446221886
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "A token bucket rate limiter allows request bursts by consuming tokens from a bucket refilling at a fixed rate. Requests lacking tokens are rejected, enforcing a sustainable average throughput.",
+      "latency": 2.8,
+      "usage": {
+        "completion_tokens": 1370,
+        "prompt_tokens": 27,
+        "total_tokens": 1397,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1334
+        },
+        "queue_time": 0.050360854,
+        "prompt_time": 0.000352255,
+        "completion_time": 2.700954333,
+        "total_time": 2.701306588
+      },
+      "note": "",
+      "scores": {
+        "under_30": true,
+        "not_stub": true,
+        "on_topic": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

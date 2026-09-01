@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","rep","score","failed","latency","note","out_tokens","text"],"data":[["large_inject","summarise","large",0,1.0,"",2.0,"",819,"The log shows the compilation of a C++ `core` target using CMake. The build failed because the `connect_timeout` function was undeclared in `src\/socket.cpp`."]]}

@@ -1,0 +1,92 @@
+{
+  "rows": [
+    {
+      "eval": "large_read",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "This module configures multi\u2011LLM access for Claude Code, exposing convenient wrappers:\n\n* Sets shared LiteLLM endpoint and key, and enforces safe token limits (CLAUDE_CODE_MAX_OUTPUT_TOKENS=32000, MAX_THINKING_TOKENS=0) needed for compatibility.\n* Defines `_CC_MULTILLM_ENV` with required Anthropic variables.\n* `ccfree` runs Claude Code against free cloud models via LiteLLM, mapping Opus/Sonnet/Haiku tiers to specific model names.\n* `cclocal` runs Claude Code entirely locally on an Ollama model (vibeforged\u201114b), requiring `olresume`.\n* `ccchore` starts a \u201cchore\u201d session that forces offload mode, automatically summarising large inputs via `llm`.\n* `llmcheck` reports the status of LiteLLM, Ollama, account, and health of isolated back\u2011end aliases without fallback, showing quota, cooldown, or errors.\n\nAll helpers are ready for on\u2011demand use via aliases.",
+      "latency": 1.27,
+      "usage": {
+        "completion_tokens": 376,
+        "prompt_tokens": 2509,
+        "total_tokens": 2885,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 147,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "names_functions": true,
+        "role": true,
+        "no_line_numbers": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_grep",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "bench.py 53",
+      "latency": 2.52,
+      "usage": {
+        "completion_tokens": 1208,
+        "prompt_tokens": 3139,
+        "total_tokens": 4347,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 1194,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "top_file": true,
+        "top_count": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_overflow",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "6 134",
+      "latency": 2.32,
+      "usage": {
+        "completion_tokens": 2300,
+        "prompt_tokens": 10327,
+        "total_tokens": 12627,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 2287,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "file_count": true,
+        "top_count": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

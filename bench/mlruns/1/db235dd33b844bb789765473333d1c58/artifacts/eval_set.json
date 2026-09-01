@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","prompt_chars","prompt_hash","criteria"],"data":[["sum_diff","summarise","core",1164,"626ceaffdcf1",6],["write_docstring","write","core",355,"8a1a61cb4aa4",6],["sum_inject","summarise","hard",1090,"e3fd828ae3b4",5],["large_grep","summarise","large",8944,"780abe063a8d",5]]}

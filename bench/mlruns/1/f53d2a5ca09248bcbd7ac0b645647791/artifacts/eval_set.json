@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","prompt_chars","criteria"],"data":[["large_read","summarise","large",8198,6],["large_grep","summarise","large",8944,5],["large_overflow","summarise","large",30167,5]]}

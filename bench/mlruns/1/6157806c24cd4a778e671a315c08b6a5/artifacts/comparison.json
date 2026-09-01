@@ -1,0 +1,1 @@
+{"columns":["alias","overall","core","hard","ci_low","ci_high"],"data":[["dbg-cerebras",0.989,0.982,1.0,0.967,1.0],["dbg-cerebras-zai",1.0,1.0,1.0,1.0,1.0],["dbg-groq",0.987,0.979,1.0,0.962,1.0],["dbg-groq-70b",0.943,0.982,0.88,0.84,1.0],["dbg-groq-8b",0.897,0.957,0.8,0.785,0.985]]}

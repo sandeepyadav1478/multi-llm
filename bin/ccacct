@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# ccacct - switch Claude Code between multiple logged-in accounts.
+#
+# Claude Code keeps one login at a time: OAuth tokens in ~/.claude/.credentials.json
+# and the matching identity (oauthAccount/userID) in ~/.claude.json. Swapping both
+# together is the whole trick -- swapping only the tokens leaves a stale email and
+# org on screen.
+#
+#   ccacct save <name>   snapshot the currently logged-in account
+#   ccacct use <name>    switch to a saved account
+#   ccacct list          list saved accounts
+#   ccacct which         show who is logged in now
+#   ccacct rm <name>     forget a saved account
+#
+# First-time setup for a second subscription:
+#   ccacct save main     # snapshot the account you are on
+#   claude   -> /logout -> /login as the other account
+#   ccacct save alt      # snapshot that one too
+#   ccacct use main      # switch back and forth from here on
+set -euo pipefail
+
+CRED="$HOME/.claude/.credentials.json"
+CONF="$HOME/.claude.json"
+STORE="$HOME/.claude/accounts"
+mkdir -p "$STORE"; chmod 700 "$STORE"
+
+die() { printf '%s\n' "$*" >&2; exit 1; }
+
+# Identity lives in ~/.claude.json; tokens live in .credentials.json. Keep them paired.
+ident() {
+  python3 -c '
+import json,sys
+try: d=json.load(open(sys.argv[1]))
+except Exception: sys.exit(0)
+a=d.get("oauthAccount") or {}
+print(a.get("emailAddress","?"), "|", a.get("organizationType","?"), "|", (d.get("userID") or "?")[:12])
+' "$CONF" 2>/dev/null || echo "?"
+}
+
+running() { pgrep -u "$USER" -f 'claude(\.exe)?$' >/dev/null 2>&1; }
+
+cmd="${1:-}"; name="${2:-}"
+
+case "$cmd" in
+  save)
+    [ -n "$name" ] || die "usage: ccacct save <name>"
+    [ -f "$CRED" ] || die "not logged in: $CRED missing. Run 'claude' and /login first."
+    cp "$CRED" "$STORE/$name.credentials.json"
+    # Persist identity too, so 'use' can restore it without a round-trip to the API.
+    python3 -c '
+import json,sys
+d=json.load(open(sys.argv[1]))
+json.dump({"oauthAccount":d.get("oauthAccount"),"userID":d.get("userID")},
+          open(sys.argv[2],"w"), indent=2)
+' "$CONF" "$STORE/$name.identity.json"
+    chmod 600 "$STORE/$name."*
+    echo "saved '$name': $(ident)"
+    ;;
+
+  use)
+    [ -n "$name" ] || die "usage: ccacct use <name>"
+    [ -f "$STORE/$name.credentials.json" ] || die "no saved account '$name' (see: ccacct list)"
+    # Claude Code holds creds in memory and rewrites them on exit, which would
+    # clobber the switch. Refuse rather than silently lose a token.
+    running && die "Claude Code is running - quit all sessions first, or it will overwrite the switch on exit."
+    # Snapshot whatever is live but unsaved, so 'use' is never destructive.
+    if [ -f "$CRED" ]; then
+      cp "$CRED" "$STORE/.autosave.credentials.json"; chmod 600 "$STORE/.autosave.credentials.json"
+    fi
+    cp "$STORE/$name.credentials.json" "$CRED"; chmod 600 "$CRED"
+    python3 -c '
+import json,sys
+conf,idf=sys.argv[1],sys.argv[2]
+d=json.load(open(conf)); i=json.load(open(idf))
+if i.get("oauthAccount"): d["oauthAccount"]=i["oauthAccount"]
+if i.get("userID"): d["userID"]=i["userID"]
+json.dump(d,open(conf,"w"),indent=2)
+' "$CONF" "$STORE/$name.identity.json"
+    echo "switched to '$name': $(ident)"
+    ;;
+
+  list)
+    shopt -s nullglob
+    found=0
+    for f in "$STORE"/*.credentials.json; do
+      n=$(basename "$f" .credentials.json); [ "$n" = ".autosave" ] && continue
+      e=$(python3 -c '
+import json,sys
+try: a=json.load(open(sys.argv[1])).get("oauthAccount") or {}
+except Exception: a={}
+print(a.get("emailAddress","?"))' "$STORE/$n.identity.json" 2>/dev/null || echo "?")
+      # expiresAt is ms since epoch; a switch to an expired account forces a re-login.
+      exp=$(python3 -c '
+import json,sys,time
+try: t=json.load(open(sys.argv[1]))["claudeAiOauth"]["expiresAt"]/1000
+except Exception: print("?"); raise SystemExit
+d=t-time.time()
+print("EXPIRED" if d<0 else f"{d/3600:.0f}h left")' "$f" 2>/dev/null || echo "?")
+      printf '  %-12s %-32s %s\n' "$n" "$e" "$exp"; found=1
+    done
+    [ "$found" = 1 ] || echo "  (none saved yet - run: ccacct save <name>)"
+    ;;
+
+  which|current) echo "$(ident)" ;;
+
+  rm)
+    [ -n "$name" ] || die "usage: ccacct rm <name>"
+    rm -f "$STORE/$name.credentials.json" "$STORE/$name.identity.json"
+    echo "removed '$name'"
+    ;;
+
+  *) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
+esac

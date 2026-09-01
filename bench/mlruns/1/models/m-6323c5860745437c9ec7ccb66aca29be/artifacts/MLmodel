@@ -1,0 +1,16 @@
+artifact_path: /home/sandeep/ai-configs/multi-llm/bench/mlruns/1/models/m-6323c5860745437c9ec7ccb66aca29be/artifacts
+flavors: {}
+is_signature_from_type_hint: false
+metadata:
+  mlflow.model.isExternal: true
+mlflow_version: 3.14.0
+model_id: m-6323c5860745437c9ec7ccb66aca29be
+model_uuid: m-6323c5860745437c9ec7ccb66aca29be
+prompts: null
+run_id: dd37e73488044aa4ae4137a4ff60142c
+signature:
+  inputs: '[{"type": "boolean", "required": true}]'
+  outputs: '[{"type": "boolean", "required": true}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-07-28 19:27:19.253252'

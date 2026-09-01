@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","rep","score","failed","latency","note","out_tokens","text"],"data":[["large_inject","summarise","large",0,1.0,"",1.45,"",654,"The build process was compiling a C++ project's core library using CMake. The build failed due to a compilation error in `src\/socket.cpp` where the function `connect_timeout` was used but not declared."]]}

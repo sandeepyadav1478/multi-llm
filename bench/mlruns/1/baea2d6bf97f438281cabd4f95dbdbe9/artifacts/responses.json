@@ -1,0 +1,200 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "**Test Run Summary**\n\nTwo tests failed:\n\n1. `test_retry_backoff` in `tests/test_client.py`: The computed delays did not match the expected values due to an incorrect backoff calculation.\n2. `test_token_refresh` in `tests/test_session.py`: A connection timeout occurred while trying to refresh a token, likely due to a network issue or an incorrect refresh URL.",
+      "latency": 0.43,
+      "usage": {
+        "completion_tokens": 79,
+        "prompt_tokens": 512,
+        "total_tokens": 591,
+        "queue_time": 0.052336237,
+        "prompt_time": 0.064116331,
+        "completion_time": 0.242748966,
+        "total_time": 0.306865297
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": true,
+        "names_fail_2": true,
+        "gives_count": false,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "This diff updates the TokenBucket class to handle negative time elapsed due to NTP correction, preventing silent bucket draining and ensuring the tokens don't exceed capacity.",
+      "latency": 0.45,
+      "usage": {
+        "completion_tokens": 32,
+        "prompt_tokens": 336,
+        "total_tokens": 368,
+        "queue_time": 0.162085177,
+        "prompt_time": 0.032788681,
+        "completion_time": 0.160802173,
+        "total_time": 0.193590854
+      },
+      "note": "",
+      "scores": {
+        "names_symbol": true,
+        "clock_guard": true,
+        "cap_change": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 0.31,
+      "usage": {
+        "completion_tokens": 6,
+        "prompt_tokens": 431,
+        "total_tokens": 437,
+        "queue_time": 0.160819266,
+        "prompt_time": 0.021208322,
+        "completion_time": 0.016274323,
+        "total_time": 0.037482645
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "Fix token bucket refill\nEnsure elapsed time is non-negative to prevent silent bucket drain.",
+      "latency": 0.33,
+      "usage": {
+        "completion_tokens": 18,
+        "prompt_tokens": 344,
+        "total_tokens": 362,
+        "queue_time": 0.162238174,
+        "prompt_time": 0.017729734,
+        "completion_time": 0.103022629,
+        "total_time": 0.120752363
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "\"\"\"Merge overlapping or adjacent intervals in a list of spans.\n\nArgs:\n    spans (list): List of intervals, where each interval is a list or tuple of two integers, [start, end].\n    gap (int, optional): Maximum gap between intervals to be merged. Defaults to 0.\n\nReturns:\n    list: List of merged intervals, where each interval is a tuple of two integers, (start, end).\n\"\"\"",
+      "latency": 0.51,
+      "usage": {
+        "completion_tokens": 87,
+        "prompt_tokens": 133,
+        "total_tokens": 220,
+        "queue_time": 0.16113772,
+        "prompt_time": 0.019457958,
+        "completion_time": 0.287475297,
+        "total_time": 0.306933255
+      },
+      "note": "",
+      "scores": {
+        "describes_merge": true,
+        "documents_gap": true,
+        "documents_return": true,
+        "no_invention": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "{\"service\": \"litellm-proxy.service\", \"state\": \"failed\", \"total\": 29}",
+      "latency": 0.46,
+      "usage": {
+        "completion_tokens": 23,
+        "prompt_tokens": 463,
+        "total_tokens": 486,
+        "queue_time": 0.321367333,
+        "prompt_time": 0.044592792,
+        "completion_time": 0.050768816,
+        "total_time": 0.095361608
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "values": false,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.21,
+      "usage": {
+        "completion_tokens": 4,
+        "prompt_tokens": 54,
+        "total_tokens": 58,
+        "queue_time": 0.161936149,
+        "prompt_time": 0.002690329,
+        "completion_time": 0.007880032,
+        "total_time": 0.010570361
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "Regulates traffic by filling a \"bucket\" with tokens at a set rate, allowing requests when tokens are available.",
+      "latency": 0.34,
+      "usage": {
+        "completion_tokens": 24,
+        "prompt_tokens": 52,
+        "total_tokens": 76,
+        "queue_time": 0.161905498,
+        "prompt_time": 0.00268382,
+        "completion_time": 0.138327359,
+        "total_time": 0.141011179
+      },
+      "note": "",
+      "scores": {
+        "under_30": true,
+        "not_stub": true,
+        "on_topic": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

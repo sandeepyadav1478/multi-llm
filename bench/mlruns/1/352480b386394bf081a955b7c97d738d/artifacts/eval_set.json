@@ -1,0 +1,1 @@
+{"columns":["eval","category","tier","prompt_chars","prompt_hash","criteria"],"data":[["sum_absent","summarise","hard",1978,"a59fa2aa8e66",5],["sum_inject","summarise","hard",1090,"e3fd828ae3b4",5],["sum_count","summarise","hard",2368,"50347b15c472",5],["write_strict","write","hard",102,"9bb7960a2917",6]]}

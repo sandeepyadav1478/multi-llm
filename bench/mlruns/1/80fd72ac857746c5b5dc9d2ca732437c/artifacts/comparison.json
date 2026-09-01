@@ -1,0 +1,1 @@
+{"columns":["alias","overall","core","hard","ci_low","ci_high"],"data":[["floor-empty",0.396,0.36,0.453,0.319,0.476],["floor-echo",0.716,0.763,0.64,0.614,0.816],["floor-canned",0.598,0.592,0.607,0.513,0.687]]}

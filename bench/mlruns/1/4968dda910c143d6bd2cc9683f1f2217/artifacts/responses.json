@@ -1,0 +1,224 @@
+{
+  "rows": [
+    {
+      "eval": "sum_log",
+      "category": "summarise",
+      "rep": 0,
+      "text": "",
+      "latency": 2.21,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 528,
+        "total_tokens": 1552,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "queue_time": 0.05015662,
+        "prompt_time": 0.039839899,
+        "completion_time": 2.010382123,
+        "total_time": 2.050222022
+      },
+      "note": "",
+      "scores": {
+        "names_fail_1": false,
+        "names_fail_2": false,
+        "gives_count": false,
+        "no_false_pass": true,
+        "under_limit": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_diff",
+      "category": "summarise",
+      "rep": 0,
+      "text": "This",
+      "latency": 2.08,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 333,
+        "total_tokens": 1357,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1021
+        },
+        "queue_time": 0.048776752,
+        "prompt_time": 0.026872817,
+        "completion_time": 1.951816659,
+        "total_time": 1.978689476
+      },
+      "note": "",
+      "scores": {
+        "names_symbol": false,
+        "clock_guard": false,
+        "cap_change": false,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 2.02,
+      "usage": {
+        "completion_tokens": 941,
+        "prompt_tokens": 408,
+        "total_tokens": 1349,
+        "completion_tokens_details": {
+          "reasoning_tokens": 933
+        },
+        "queue_time": 0.046073511,
+        "prompt_time": 0.032211008,
+        "completion_time": 1.790615458,
+        "total_time": 1.822826466
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "rep": 0,
+      "text": "",
+      "latency": 2.11,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 341,
+        "total_tokens": 1365,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "queue_time": 0.049258299,
+        "prompt_time": 0.02582273,
+        "completion_time": 1.983485184,
+        "total_time": 2.009307914
+      },
+      "note": "",
+      "scores": {
+        "subject_len": false,
+        "imperative": false,
+        "mentions_change": false,
+        "no_diff_echo": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_docstring",
+      "category": "write",
+      "rep": 0,
+      "text": "",
+      "latency": 2.05,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 116,
+        "total_tokens": 1140,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "queue_time": 0.049344684,
+        "prompt_time": 0.007918486,
+        "completion_time": 1.943824034,
+        "total_time": 1.95174252
+      },
+      "note": "",
+      "scores": {
+        "describes_merge": false,
+        "documents_gap": false,
+        "documents_return": false,
+        "no_invention": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json",
+      "category": "format",
+      "rep": 0,
+      "text": "",
+      "latency": 2.29,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 440,
+        "total_tokens": 1464,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "queue_time": 0.230950091,
+        "prompt_time": 0.035569846,
+        "completion_time": 1.981208338,
+        "total_time": 2.016778184
+      },
+      "note": "",
+      "scores": {
+        "parses": false,
+        "schema": false,
+        "values": false,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 0.54,
+      "usage": {
+        "completion_tokens": 234,
+        "prompt_tokens": 29,
+        "total_tokens": 263,
+        "completion_tokens_details": {
+          "reasoning_tokens": 228
+        },
+        "queue_time": 0.049871352,
+        "prompt_time": 0.001922168,
+        "completion_time": 0.444275207,
+        "total_time": 0.446197375
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_length",
+      "category": "format",
+      "rep": 0,
+      "text": "",
+      "latency": 2.12,
+      "usage": {
+        "completion_tokens": 1024,
+        "prompt_tokens": 27,
+        "total_tokens": 1051,
+        "completion_tokens_details": {
+          "reasoning_tokens": 1024
+        },
+        "queue_time": 0.055403764,
+        "prompt_time": 0.000341455,
+        "completion_time": 1.970482826,
+        "total_time": 1.970824281
+      },
+      "note": "",
+      "scores": {
+        "under_30": true,
+        "not_stub": false,
+        "on_topic": false,
+        "non_empty": false,
+        "no_leak": true
+      }
+    }
+  ]
+}

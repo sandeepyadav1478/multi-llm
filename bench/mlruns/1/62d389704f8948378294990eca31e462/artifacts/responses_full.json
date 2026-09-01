@@ -1,0 +1,68 @@
+{
+  "rows": [
+    {
+      "eval": "large_read",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "This shell module provides multi-model controls for Claude Code, enabling users to leverage different AI services based on availability and cost.\n\nIt defines three primary modes:\n1. **ccfree**: Uses free cloud models via LiteLLM proxy, with automatic degradation to local models if providers are unavailable.\n2. **cclocal**: Runs everything locally using Ollama's model, ideal for offline work or avoiding quotas.\n3. **ccchore**: A special session optimized for routine tasks like log analysis and drafting, where the user handles results manually to avoid context bloat.\n\nThe module also includes a health check (`llmcheck`) that probes specific backends without fallbacks to report actual service status. Key configurations include token limits and disabling extended thinking to ensure compatibility with free backends.",
+      "latency": 11.95,
+      "usage": {
+        "completion_tokens": 326,
+        "prompt_tokens": 2755,
+        "total_tokens": 3081
+      },
+      "note": "",
+      "scores": {
+        "names_functions": true,
+        "role": true,
+        "no_line_numbers": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_grep",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 55.39,
+      "usage": {
+        "completion_tokens": 4096,
+        "prompt_tokens": 3431,
+        "total_tokens": 7527
+      },
+      "note": "",
+      "scores": {
+        "top_file": false,
+        "top_count": false,
+        "terse": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_overflow",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "6 134",
+      "latency": 9.14,
+      "usage": {
+        "completion_tokens": 480,
+        "prompt_tokens": 10801,
+        "total_tokens": 11281
+      },
+      "note": "",
+      "scores": {
+        "file_count": true,
+        "top_count": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}

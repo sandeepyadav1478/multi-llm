@@ -1,0 +1,80 @@
+{
+  "rows": [
+    {
+      "eval": "large_read",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "This module enables Claude Code to interact with multiple LLM backends. It provides `ccfree` for free cloud models, `cclocal` for local Ollama, and `ccchore` for optimized Pro sessions. It configures essential LiteLLM environment variables, specifically disabling thinking tokens and limiting output to prevent API errors. Finally, it includes `llmcheck`, a utility to diagnose backend availability and quota status across different providers.",
+      "latency": 2.59,
+      "usage": {
+        "completion_tokens": 1056,
+        "prompt_tokens": 2443,
+        "total_tokens": 3499,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 965,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "names_functions": true,
+        "role": true,
+        "no_line_numbers": true,
+        "under_limit": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_grep",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "~/ai-configs/multi-llm/bench/bench.py 53",
+      "latency": 1.52,
+      "usage": {
+        "completion_tokens": 1255,
+        "prompt_tokens": 3153,
+        "total_tokens": 4408,
+        "completion_tokens_details": {
+          "accepted_prediction_tokens": 0,
+          "reasoning_tokens": 1238,
+          "rejected_prediction_tokens": 0
+        },
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "note": "",
+      "scores": {
+        "top_file": true,
+        "top_count": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "large_overflow",
+      "category": "summarise",
+      "tier": "large",
+      "rep": 0,
+      "text": "",
+      "latency": 0.0,
+      "usage": {},
+      "note": "CONTEXT TOO SMALL",
+      "scores": {
+        "file_count": false,
+        "top_count": false,
+        "terse": true,
+        "non_empty": false,
+        "no_leak": true
+      }
+    }
+  ]
+}

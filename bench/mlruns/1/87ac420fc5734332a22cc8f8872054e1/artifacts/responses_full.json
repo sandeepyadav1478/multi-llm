@@ -1,0 +1,89 @@
+{
+  "rows": [
+    {
+      "eval": "sum_needle",
+      "category": "summarise",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "litellm-proxy.service",
+      "latency": 6.73,
+      "usage": {
+        "completion_tokens": 68,
+        "prompt_tokens": 444,
+        "total_tokens": 512
+      },
+      "note": "",
+      "scores": {
+        "correct": true,
+        "no_extras": true,
+        "terse": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "write_commit",
+      "category": "write",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "Handle backward clock jumps in rate limiter\n\nClocks can step backwards when corrected by NTP. Without protection, a negative elapsed time would subtract from the token count, draining the bucket and locking all subsequent requests. This patch clamps negative elapsed times to zero before calculating replenishment.",
+      "latency": 8.06,
+      "usage": {
+        "completion_tokens": 516,
+        "prompt_tokens": 377,
+        "total_tokens": 893
+      },
+      "note": "",
+      "scores": {
+        "subject_len": true,
+        "imperative": true,
+        "mentions_change": true,
+        "no_diff_echo": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_exact",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "ACKNOWLEDGED",
+      "latency": 2.7,
+      "usage": {
+        "completion_tokens": 164,
+        "prompt_tokens": 65,
+        "total_tokens": 229
+      },
+      "note": "",
+      "scores": {
+        "exact": true,
+        "contains": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    },
+    {
+      "eval": "fmt_json_nested",
+      "category": "format",
+      "tier": "smoke",
+      "rep": 0,
+      "text": "{\"total\": 47, \"failed\": [{\"name\": \"test_retry_backoff\", \"reason\": \"assert [2.0, 4.0, 6.0] == [2.0, 4.0, 8.0]\"}, {\"name\": \"test_token_refresh\", \"reason\": \"httpx.ConnectTimeout: timed out\"}]}",
+      "latency": 11.62,
+      "usage": {
+        "completion_tokens": 754,
+        "prompt_tokens": 588,
+        "total_tokens": 1342
+      },
+      "note": "",
+      "scores": {
+        "parses": true,
+        "schema": true,
+        "count_right": true,
+        "names_right": true,
+        "non_empty": true,
+        "no_leak": true
+      }
+    }
+  ]
+}
