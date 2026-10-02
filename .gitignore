@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Never commit credentials -- this repo is pushed to GitHub.
+.env
+.env.*
+*.pem
