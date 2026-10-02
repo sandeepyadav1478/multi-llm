@@ -19,3 +19,5 @@
 {"t": 1785748450, "alias": "local", "prompt_chars": 396, "elapsed": 5.13, "ok": true, "out_chars": 103, "backend": "local", "finish": "stop", "prompt_tokens": 214, "completion_tokens": 345}
 {"t": 1786337948, "alias": "default", "prompt_chars": 6339, "elapsed": 1.09, "ok": true, "out_chars": 1245, "backend": "default", "finish": "stop", "prompt_tokens": 1613, "completion_tokens": 684}
 {"t": 1786884998, "alias": "default", "prompt_chars": 8625, "elapsed": 1.55, "ok": true, "out_chars": 872, "backend": "default", "finish": "stop", "prompt_tokens": 2688, "completion_tokens": 568}
+{"t": 1788407862, "alias": "default", "prompt_chars": 558, "elapsed": 242.03, "ok": false, "err": "no_content", "backend": "qwen/qwen3.6-27b", "finish": "length", "prompt_tokens": 222, "completion_tokens": 4096}
+{"t": 1789826010, "alias": "default", "prompt_chars": 123605, "elapsed": 300.05, "ok": false, "err": "bad_response"}
